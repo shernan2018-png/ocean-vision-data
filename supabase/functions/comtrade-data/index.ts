@@ -27,15 +27,29 @@ serve(async (req) => {
     const partnerParam = partnerCode || '0'; // 0 = World
     const url = `https://comtradeplus.un.org/api/v1/getHS?reporterCode=${reporterCode}&partnerCode=${partnerParam}&cmdCode=${cmdCode}&flowCode=${flowCode}&freq=${freq}&period=${period}`;
 
+    console.log('Requesting URL:', url);
+
     const response = await fetch(url, {
       headers: {
         'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0',
       },
     });
 
+    console.log('Response status:', response.status);
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
-      console.error('Comtrade API error:', response.status, await response.text());
-      throw new Error(`Comtrade API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('Comtrade API error:', response.status, errorText);
+      throw new Error(`Comtrade API returned status ${response.status}: ${errorText.substring(0, 200)}`);
+    }
+
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      console.error('Non-JSON response:', text.substring(0, 500));
+      throw new Error(`Expected JSON but got ${contentType}. Response: ${text.substring(0, 200)}`);
     }
 
     const data = await response.json();
