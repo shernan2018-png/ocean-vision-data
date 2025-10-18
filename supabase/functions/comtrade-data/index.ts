@@ -32,9 +32,9 @@ serve(async (req) => {
 
     console.log('Fetching Comtrade data:', { reporterCode, partnerCode, cmdCode, flowCode, freq, period, typeCode, clCode });
 
-    // Try using the preview endpoint first to test (max 500 records, no auth needed)
+    // Use the correct API domain: comtradeapi.un.org
     const partnerParam = partnerCode || '0'; // 0 = World
-    const url = `https://comtradeplus.un.org/data/v1/getpreview/${typeCode}/${freq}/${clCode}`;
+    const url = `https://comtradeapi.un.org/data/v1/get/${typeCode}/${freq}/${clCode}`;
     
     // Build query parameters - using preview mode for testing, then switch to full data
     const params = new URLSearchParams({
