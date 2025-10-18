@@ -36,12 +36,23 @@ serve(async (req) => {
     const partnerParam = partnerCode || '0'; // 0 = World
     const url = `https://comtradeapi.un.org/data/v1/get/${typeCode}/${freq}/${clCode}`;
     
-    // Build query parameters - using preview mode for testing, then switch to full data
+    // Build query parameters - the API expects different format
+    // flowCode: M=Import, X=Export, etc. (not numeric)
+    // period: needs to be in format YYYYMM for monthly, YYYY for annual
+    const flowMapping: Record<string, string> = {
+      '1': 'X',  // Export
+      '2': 'M',  // Import
+      'X': 'X',
+      'M': 'M'
+    };
+    
+    const mappedFlow = flowMapping[flowCode] || flowCode;
+    
     const params = new URLSearchParams({
       reporterCode,
       partnerCode: partnerParam,
       cmdCode,
-      flowCode,
+      flowCode: mappedFlow,
       period,
       maxRecords: '500',
       includeDesc: 'true'
