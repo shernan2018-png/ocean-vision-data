@@ -20,6 +20,12 @@ serve(async (req) => {
   }
 
   try {
+    const primaryKey = Deno.env.get('COMTRADE_PRIMARY_KEY');
+    
+    if (!primaryKey) {
+      throw new Error('COMTRADE_PRIMARY_KEY is not configured');
+    }
+
     const { reporterCode, partnerCode, cmdCode, flowCode, freq, period }: ComtradeParams = await req.json();
 
     console.log('Fetching Comtrade data:', { reporterCode, partnerCode, cmdCode, flowCode, freq, period });
@@ -33,6 +39,7 @@ serve(async (req) => {
       headers: {
         'Accept': 'application/json',
         'User-Agent': 'Mozilla/5.0',
+        'Ocp-Apim-Subscription-Key': primaryKey,
       },
     });
 
