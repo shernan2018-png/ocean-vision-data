@@ -48,12 +48,15 @@ serve(async (req) => {
     
     const mappedFlow = flowMapping[flowCode] || flowCode;
     
+    // Fix period format: remove hyphens (2020-01 -> 202001)
+    const fixedPeriod = period.replace(/-/g, '');
+    
     const params = new URLSearchParams({
       reporterCode,
       partnerCode: partnerParam,
       cmdCode,
       flowCode: mappedFlow,
-      period,
+      period: fixedPeriod,
       maxRecords: '500',
       includeDesc: 'true'
     });
