@@ -32,23 +32,26 @@ serve(async (req) => {
 
     console.log('Fetching Comtrade data:', { reporterCode, partnerCode, cmdCode, flowCode, freq, period, typeCode, clCode });
 
-    // Build the new API URL - the new API uses /data/v1/get/{typeCode}/{freqCode}/{clCode} format
+    // Try using the preview endpoint first to test (max 500 records, no auth needed)
     const partnerParam = partnerCode || '0'; // 0 = World
-    const url = `https://comtradeplus.un.org/data/v1/get/${typeCode}/${freq}/${clCode}`;
+    const url = `https://comtradeplus.un.org/data/v1/getpreview/${typeCode}/${freq}/${clCode}`;
     
-    // Build query parameters
+    // Build query parameters - using preview mode for testing, then switch to full data
     const params = new URLSearchParams({
       reporterCode,
       partnerCode: partnerParam,
       cmdCode,
       flowCode,
       period,
+      maxRecords: '500',
+      includeDesc: 'true'
     });
 
     const fullUrl = `${url}?${params.toString()}`;
     console.log('Requesting URL:', fullUrl);
 
     const response = await fetch(fullUrl, {
+      method: 'GET',
       headers: {
         'Accept': 'application/json',
         'Ocp-Apim-Subscription-Key': primaryKey,
