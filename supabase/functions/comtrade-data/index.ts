@@ -12,6 +12,8 @@ interface ComtradeParams {
   flowCode: string;
   freq: string;
   period: string;
+  typeCode?: string;  // C = Goods, S = Services
+  clCode?: string;    // HS, SITC, etc.
 }
 
 serve(async (req) => {
@@ -26,19 +28,29 @@ serve(async (req) => {
       throw new Error('COMTRADE_PRIMARY_KEY is not configured');
     }
 
-    const { reporterCode, partnerCode, cmdCode, flowCode, freq, period }: ComtradeParams = await req.json();
+    const { reporterCode, partnerCode, cmdCode, flowCode, freq, period, typeCode = 'C', clCode = 'HS' }: ComtradeParams = await req.json();
 
-    console.log('Fetching Comtrade data:', { reporterCode, partnerCode, cmdCode, flowCode, freq, period });
+    console.log('Fetching Comtrade data:', { reporterCode, partnerCode, cmdCode, flowCode, freq, period, typeCode, clCode });
 
+    // Build the new API URL - the new API uses /data/v1/get/{typeCode}/{freqCode}/{clCode} format
     const partnerParam = partnerCode || '0'; // 0 = World
-    const url = `https://comtradeplus.un.org/api/v1/getHS?reporterCode=${reporterCode}&partnerCode=${partnerParam}&cmdCode=${cmdCode}&flowCode=${flowCode}&freq=${freq}&period=${period}`;
+    const url = `https://comtradeplus.un.org/data/v1/get/${typeCode}/${freq}/${clCode}`;
+    
+    // Build query parameters
+    const params = new URLSearchParams({
+      reporterCode,
+      partnerCode: partnerParam,
+      cmdCode,
+      flowCode,
+      period,
+    });
 
-    console.log('Requesting URL:', url);
+    const fullUrl = `${url}?${params.toString()}`;
+    console.log('Requesting URL:', fullUrl);
 
-    const response = await fetch(url, {
+    const response = await fetch(fullUrl, {
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0',
         'Ocp-Apim-Subscription-Key': primaryKey,
       },
     });
