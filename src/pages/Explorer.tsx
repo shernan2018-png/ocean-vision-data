@@ -31,7 +31,7 @@ const Explorer = () => {
     cmdCode: '030631', // Shrimp
     flowCode: '2', // Export
     freq: 'M', // Monthly
-    period: '2020-01,2020-12',
+    period: '2023-01', // Single period only
   });
 
   useEffect(() => {
@@ -74,12 +74,18 @@ const Explorer = () => {
 
       console.log('API Response:', data);
 
-      // Transform data for chart - the API returns data in 'data' array, not 'results'
+      // Transform data for chart - the API returns data in 'data' array
       const apiData = data?.data || [];
       const transformed = apiData.map((item: any) => ({
         period: item.period,
+        refPeriod: item.refPeriodDesc,
+        reporter: item.reporterDesc,
+        partner: item.partnerDesc,
+        commodity: item.cmdDesc,
+        flow: item.flowDesc,
         value: item.primaryValue || 0,
         quantity: item.netWgt || 0,
+        qtyUnit: item.qtyUnitAbbr,
       }));
 
       setChartData(transformed);
@@ -257,7 +263,8 @@ const Explorer = () => {
                 id="period"
                 value={filters.period}
                 onChange={(e) => setFilters({ ...filters, period: e.target.value })}
-                placeholder="2020-01,2020-12"
+                placeholder={filters.freq === 'M' ? '2023-01' : '2023'}
+                title={filters.freq === 'M' ? 'Format: YYYY-MM (e.g., 2023-01)' : 'Format: YYYY (e.g., 2023)'}
               />
             </div>
           </div>
@@ -279,35 +286,70 @@ const Explorer = () => {
         </Card>
 
         {chartData.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Trade Value Over Time</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="period" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
+          <>
+            <Card className="p-6 mb-8">
+              <h3 className="text-lg font-semibold mb-4">Data Preview</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2 font-semibold">Period</th>
+                      <th className="text-left p-2 font-semibold">Commodity</th>
+                      <th className="text-left p-2 font-semibold">Flow</th>
+                      <th className="text-right p-2 font-semibold">Value (USD)</th>
+                      <th className="text-right p-2 font-semibold">Quantity</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {chartData.slice(0, 10).map((row: any, idx: number) => (
+                      <tr key={idx} className="border-b hover:bg-muted/50">
+                        <td className="p-2">{row.refPeriod || row.period}</td>
+                        <td className="p-2 text-sm">{row.commodity}</td>
+                        <td className="p-2">{row.flow}</td>
+                        <td className="p-2 text-right font-mono">{row.value.toLocaleString()}</td>
+                        <td className="p-2 text-right font-mono">{row.quantity.toLocaleString()} {row.qtyUnit}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {chartData.length > 10 && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Showing 10 of {chartData.length} records
+                  </p>
+                )}
+              </div>
             </Card>
 
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-4">Quantity Over Time</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="period" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="quantity" fill="hsl(var(--secondary))" />
-                </BarChart>
-              </ResponsiveContainer>
-            </Card>
-          </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Trade Value Over Time</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="period" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Card>
+
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Quantity Over Time</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="period" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="quantity" fill="hsl(var(--secondary))" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Card>
+            </div>
+          </>
         )}
       </div>
     </div>
