@@ -72,17 +72,20 @@ const Explorer = () => {
 
       if (error) throw error;
 
-      // Transform data for chart
-      const transformed = data?.results?.map((item: any) => ({
+      console.log('API Response:', data);
+
+      // Transform data for chart - the API returns data in 'data' array, not 'results'
+      const apiData = data?.data || [];
+      const transformed = apiData.map((item: any) => ({
         period: item.period,
         value: item.primaryValue || 0,
         quantity: item.netWgt || 0,
-      })) || [];
+      }));
 
       setChartData(transformed);
       
       toast({
-        title: t('common.success') || 'Success',
+        title: 'Success',
         description: `${transformed.length} records loaded`,
       });
     } catch (error) {

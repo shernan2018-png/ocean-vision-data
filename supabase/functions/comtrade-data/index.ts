@@ -91,6 +91,8 @@ serve(async (req) => {
     const data = await response.json();
     
     console.log('Comtrade data fetched successfully');
+    console.log('Data structure:', JSON.stringify(data).substring(0, 500));
+    console.log('Number of results:', data?.data?.length || 0);
 
     return new Response(JSON.stringify(data), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
