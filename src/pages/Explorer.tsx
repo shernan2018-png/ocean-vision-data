@@ -29,9 +29,10 @@ const Explorer = () => {
     reporterCode: '36', // Australia
     partnerCode: '156', // China
     cmdCode: '030631', // Shrimp
-    flowCode: '2', // Export
+    flowCode: '1', // Export
     freq: 'M', // Monthly
-    period: '2023-01', // Single period only
+    period: '2022-01', // Single period or year
+    periodType: 'month', // 'month' or 'year'
   });
 
   useEffect(() => {
@@ -222,10 +223,11 @@ const Explorer = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-background">
-                  <SelectItem value="030631">030631 - Shrimps/Prawns</SelectItem>
+                  <SelectItem value="030631">030631 - Shrimps/Prawns (Frozen)</SelectItem>
+                  <SelectItem value="030611">030611 - Rock Lobster/Spiny Lobster (Panulirus)</SelectItem>
                   <SelectItem value="0302">0302 - Fresh Fish</SelectItem>
                   <SelectItem value="0303">0303 - Frozen Fish</SelectItem>
-                  <SelectItem value="0306">0306 - Crustaceans</SelectItem>
+                  <SelectItem value="0306">0306 - All Crustaceans</SelectItem>
                   <SelectItem value="0307">0307 - Molluscs</SelectItem>
                 </SelectContent>
               </Select>
@@ -238,8 +240,8 @@ const Explorer = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-background">
-                  <SelectItem value="1">Import</SelectItem>
-                  <SelectItem value="2">Export</SelectItem>
+                  <SelectItem value="1">Export</SelectItem>
+                  <SelectItem value="2">Import</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -258,13 +260,33 @@ const Explorer = () => {
             </div>
 
             <div>
+              <Label htmlFor="periodType">Period Type</Label>
+              <Select 
+                value={filters.periodType} 
+                onValueChange={(value) => setFilters({ 
+                  ...filters, 
+                  periodType: value as 'month' | 'year',
+                  period: value === 'year' ? '2022' : '2022-01'
+                })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background">
+                  <SelectItem value="month">Single Month</SelectItem>
+                  <SelectItem value="year">Full Year</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
               <Label htmlFor="period">{t('explorer.period')}</Label>
               <Input
                 id="period"
                 value={filters.period}
                 onChange={(e) => setFilters({ ...filters, period: e.target.value })}
-                placeholder={filters.freq === 'M' ? '2023-01' : '2023'}
-                title={filters.freq === 'M' ? 'Format: YYYY-MM (e.g., 2023-01)' : 'Format: YYYY (e.g., 2023)'}
+                placeholder={filters.periodType === 'month' ? '2022-01' : '2022'}
+                title={filters.periodType === 'month' ? 'Format: YYYY-MM (e.g., 2022-01)' : 'Format: YYYY (e.g., 2022)'}
               />
             </div>
           </div>
