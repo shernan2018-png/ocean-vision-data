@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navbar } from '@/components/Navbar';
 import { Card } from '@/components/ui/card';
@@ -11,11 +11,19 @@ import { Download, Save, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
+interface Country {
+  id: string;
+  text: string;
+}
+
 const Explorer = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [chartData, setChartData] = useState<any[]>([]);
+  const [reporters, setReporters] = useState<Country[]>([]);
+  const [partners, setPartners] = useState<Country[]>([]);
+  const [loadingCatalogs, setLoadingCatalogs] = useState(true);
   
   const [filters, setFilters] = useState({
     reporterCode: '36', // Australia
@@ -25,6 +33,35 @@ const Explorer = () => {
     freq: 'M', // Monthly
     period: '2020-01,2020-12',
   });
+
+  useEffect(() => {
+    const fetchCatalogs = async () => {
+      try {
+        const [reportersRes, partnersRes] = await Promise.all([
+          supabase.functions.invoke('comtrade-catalogs', { body: { type: 'reporters' } }),
+          supabase.functions.invoke('comtrade-catalogs', { body: { type: 'partners' } })
+        ]);
+
+        if (reportersRes.data?.results) {
+          setReporters(reportersRes.data.results);
+        }
+        if (partnersRes.data?.results) {
+          setPartners(partnersRes.data.results);
+        }
+      } catch (error) {
+        console.error('Error fetching catalogs:', error);
+        toast({
+          title: t('common.error'),
+          description: 'Failed to load country lists',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoadingCatalogs(false);
+      }
+    };
+
+    fetchCatalogs();
+  }, []);
 
   const handleSearch = async () => {
     setLoading(true);
@@ -131,22 +168,42 @@ const Explorer = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             <div>
               <Label htmlFor="reporter">{t('explorer.reporter')}</Label>
-              <Input
-                id="reporter"
-                value={filters.reporterCode}
-                onChange={(e) => setFilters({ ...filters, reporterCode: e.target.value })}
-                placeholder="36 (Australia)"
-              />
+              <Select 
+                value={filters.reporterCode} 
+                onValueChange={(value) => setFilters({ ...filters, reporterCode: value })}
+                disabled={loadingCatalogs}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingCatalogs ? "Loading..." : "Select country"} />
+                </SelectTrigger>
+                <SelectContent className="bg-background">
+                  {reporters.map((country) => (
+                    <SelectItem key={country.id} value={country.id}>
+                      {country.text}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
               <Label htmlFor="partner">{t('explorer.partner')}</Label>
-              <Input
-                id="partner"
-                value={filters.partnerCode}
-                onChange={(e) => setFilters({ ...filters, partnerCode: e.target.value })}
-                placeholder="156 (China)"
-              />
+              <Select 
+                value={filters.partnerCode} 
+                onValueChange={(value) => setFilters({ ...filters, partnerCode: value })}
+                disabled={loadingCatalogs}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingCatalogs ? "Loading..." : "Select partner"} />
+                </SelectTrigger>
+                <SelectContent className="bg-background">
+                  {partners.map((country) => (
+                    <SelectItem key={country.id} value={country.id}>
+                      {country.text}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -155,7 +212,7 @@ const Explorer = () => {
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background">
                   <SelectItem value="030631">030631 - Shrimps/Prawns</SelectItem>
                   <SelectItem value="0302">0302 - Fresh Fish</SelectItem>
                   <SelectItem value="0303">0303 - Frozen Fish</SelectItem>
@@ -171,7 +228,7 @@ const Explorer = () => {
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background">
                   <SelectItem value="1">Import</SelectItem>
                   <SelectItem value="2">Export</SelectItem>
                 </SelectContent>
@@ -184,7 +241,7 @@ const Explorer = () => {
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background">
                   <SelectItem value="A">Annual</SelectItem>
                   <SelectItem value="M">Monthly</SelectItem>
                 </SelectContent>
