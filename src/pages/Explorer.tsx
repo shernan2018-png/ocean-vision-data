@@ -31,8 +31,7 @@ const Explorer = () => {
     cmdCode: '030631', // Shrimp
     flowCode: '1', // Export
     freq: 'M', // Monthly
-    period: '2022-01', // Single period or year
-    periodType: 'month', // 'month' or 'year'
+    period: '2022-01', // Format: YYYY for full year, YYYY-MM for single month
   });
 
   useEffect(() => {
@@ -260,34 +259,17 @@ const Explorer = () => {
             </div>
 
             <div>
-              <Label htmlFor="periodType">Period Type</Label>
-              <Select 
-                value={filters.periodType} 
-                onValueChange={(value) => setFilters({ 
-                  ...filters, 
-                  periodType: value as 'month' | 'year',
-                  period: value === 'year' ? '2022' : '2022-01'
-                })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-background">
-                  <SelectItem value="month">Single Month</SelectItem>
-                  <SelectItem value="year">Full Year</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
               <Label htmlFor="period">{t('explorer.period')}</Label>
               <Input
                 id="period"
                 value={filters.period}
                 onChange={(e) => setFilters({ ...filters, period: e.target.value })}
-                placeholder={filters.periodType === 'month' ? '2022-01' : '2022'}
-                title={filters.periodType === 'month' ? 'Format: YYYY-MM (e.g., 2022-01)' : 'Format: YYYY (e.g., 2022)'}
+                placeholder="2022 or 2022-01"
+                title="Format: YYYY for full year (e.g., 2022) or YYYY-MM for single month (e.g., 2022-01)"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Enter YYYY for full year or YYYY-MM for specific month
+              </p>
             </div>
           </div>
 

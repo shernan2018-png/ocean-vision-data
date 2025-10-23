@@ -11,8 +11,7 @@ interface ComtradeParams {
   cmdCode: string;
   flowCode: string;
   freq: string;
-  period: string;
-  periodType?: string; // 'month' or 'year'
+  period: string; // Format: YYYY for full year, YYYY-MM for single month
   typeCode?: string;  // C = Goods, S = Services
   clCode?: string;    // HS, SITC, etc.
 }
@@ -29,9 +28,9 @@ serve(async (req) => {
       throw new Error('COMTRADE_PRIMARY_KEY is not configured');
     }
 
-    const { reporterCode, partnerCode, cmdCode, flowCode, freq, period, periodType = 'month', typeCode = 'C', clCode = 'HS' }: ComtradeParams = await req.json();
+    const { reporterCode, partnerCode, cmdCode, flowCode, freq, period, typeCode = 'C', clCode = 'HS' }: ComtradeParams = await req.json();
 
-    console.log('Fetching Comtrade data:', { reporterCode, partnerCode, cmdCode, flowCode, freq, period, periodType, typeCode, clCode });
+    console.log('Fetching Comtrade data:', { reporterCode, partnerCode, cmdCode, flowCode, freq, period, typeCode, clCode });
 
     // Use the correct API domain: comtradeapi.un.org
     const partnerParam = partnerCode || '0'; // 0 = World
@@ -49,19 +48,22 @@ serve(async (req) => {
     
     const mappedFlow = flowMapping[flowCode] || flowCode;
     
-    // Handle period: if year type, generate all 12 months; if month, use single value
+    // Auto-detect if period is full year (YYYY) or single month (YYYY-MM)
     let fixedPeriod: string;
-    if (periodType === 'year' && freq === 'M') {
-      // Generate all 12 months for the year (e.g., 2022 -> 202201,202202,...,202212)
-      const year = period.replace(/-/g, '');
+    const cleanPeriod = period.trim();
+    
+    // If period is 4 digits (YYYY) and frequency is Monthly, generate all 12 months
+    if (cleanPeriod.length === 4 && freq === 'M') {
+      // Full year: generate all 12 months (e.g., 2022 -> 202201,202202,...,202212)
+      const year = cleanPeriod;
       const months = Array.from({ length: 12 }, (_, i) => {
         const month = String(i + 1).padStart(2, '0');
         return `${year}${month}`;
       });
       fixedPeriod = months.join(',');
     } else {
-      // Single period: remove hyphens (2020-01 -> 202001)
-      fixedPeriod = period.replace(/-/g, '');
+      // Single period: remove hyphens (2022-01 -> 202201, or 2022 -> 2022)
+      fixedPeriod = cleanPeriod.replace(/-/g, '');
     }
     
     const params = new URLSearchParams({
