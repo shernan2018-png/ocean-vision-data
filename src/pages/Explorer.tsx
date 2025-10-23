@@ -76,17 +76,25 @@ const Explorer = () => {
 
       // Transform data for chart - the API returns data in 'data' array
       const apiData = data?.data || [];
-      const transformed = apiData.map((item: any) => ({
-        period: item.period,
-        refPeriod: item.refPeriodDesc,
-        reporter: item.reporterDesc,
-        partner: item.partnerDesc,
-        commodity: item.cmdDesc,
-        flow: item.flowDesc,
-        value: item.primaryValue || 0,
-        quantity: item.netWgt || 0,
-        qtyUnit: item.qtyUnitAbbr,
-      }));
+      const transformed = apiData.map((item: any) => {
+        const periodStr = String(item.period);
+        const year = periodStr.substring(0, 4);
+        const month = periodStr.length >= 6 ? periodStr.substring(4, 6) : '';
+        
+        return {
+          period: item.period,
+          year,
+          month,
+          refPeriod: item.refPeriodDesc,
+          reporter: item.reporterDesc,
+          partner: item.partnerDesc,
+          commodity: item.cmdDesc,
+          flow: item.flowDesc,
+          value: item.primaryValue || 0,
+          quantity: item.netWgt || 0,
+          qtyUnit: item.qtyUnitAbbr,
+        };
+      });
 
       setChartData(transformed);
       
@@ -297,7 +305,8 @@ const Explorer = () => {
                 <table className="w-full border-collapse">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-2 font-semibold">Period</th>
+                      <th className="text-left p-2 font-semibold">Year</th>
+                      <th className="text-left p-2 font-semibold">Month</th>
                       <th className="text-left p-2 font-semibold">Commodity</th>
                       <th className="text-left p-2 font-semibold">Flow</th>
                       <th className="text-right p-2 font-semibold">Value (USD)</th>
@@ -307,7 +316,8 @@ const Explorer = () => {
                   <tbody>
                     {chartData.slice(0, 10).map((row: any, idx: number) => (
                       <tr key={idx} className="border-b hover:bg-muted/50">
-                        <td className="p-2">{row.refPeriod || row.period}</td>
+                        <td className="p-2">{row.year}</td>
+                        <td className="p-2">{row.month || '-'}</td>
                         <td className="p-2 text-sm">{row.commodity}</td>
                         <td className="p-2">{row.flow}</td>
                         <td className="p-2 text-right font-mono">{row.value.toLocaleString()}</td>
