@@ -23,8 +23,63 @@ const Explorer = () => {
   const [chartData, setChartData] = useState<any[]>([]);
   const [reporters, setReporters] = useState<Country[]>([]);
   const [partners, setPartners] = useState<Country[]>([]);
-  const [commodities, setCommodities] = useState<Country[]>([]);
   const [loadingCatalogs, setLoadingCatalogs] = useState(true);
+  
+  // Seafood and Crustaceans HS Codes
+  const seafoodHSCodes = [
+    { id: '03', text: '03 - Fish and aquatic invertebrates' },
+    { id: '0301', text: '0301 - Live fish' },
+    { id: '0302', text: '0302 - Fresh or chilled fish' },
+    { id: '0303', text: '0303 - Frozen fish' },
+    { id: '0304', text: '0304 - Fish fillets and other fish meat' },
+    { id: '0305', text: '0305 - Dried, salted or smoked fish' },
+    { id: '0306', text: '0306 - Crustaceans' },
+    { id: '030611', text: '030611 - Rock lobster/Spiny lobster (Panulirus spp.)' },
+    { id: '030612', text: '030612 - Lobsters (Homarus spp.)' },
+    { id: '030613', text: '030613 - Shrimps and prawns' },
+    { id: '030614', text: '030614 - Crabs' },
+    { id: '030615', text: '030615 - Norway lobsters (Nephrops norvegicus)' },
+    { id: '030616', text: '030616 - Cold-water shrimps and prawns' },
+    { id: '030617', text: '030617 - Other shrimps and prawns' },
+    { id: '030619', text: '030619 - Other crustaceans' },
+    { id: '030621', text: '030621 - Rock lobster/Spiny lobster (frozen)' },
+    { id: '030622', text: '030622 - Lobsters (frozen)' },
+    { id: '030623', text: '030623 - Shrimps and prawns (frozen)' },
+    { id: '030624', text: '030624 - Crabs (frozen)' },
+    { id: '030625', text: '030625 - Norway lobsters (frozen)' },
+    { id: '030626', text: '030626 - Cold-water shrimps and prawns (frozen)' },
+    { id: '030627', text: '030627 - Other shrimps and prawns (frozen)' },
+    { id: '030631', text: '030631 - Rock lobster/Spiny lobster (live/fresh/chilled)' },
+    { id: '030632', text: '030632 - Lobsters (live/fresh/chilled)' },
+    { id: '030633', text: '030633 - Crabs (live/fresh/chilled)' },
+    { id: '030634', text: '030634 - Norway lobsters (live/fresh/chilled)' },
+    { id: '030635', text: '030635 - Cold-water shrimps and prawns (live/fresh/chilled)' },
+    { id: '030636', text: '030636 - Other shrimps and prawns (live/fresh/chilled)' },
+    { id: '0307', text: '0307 - Molluscs' },
+    { id: '030711', text: '030711 - Oysters (live/fresh/chilled)' },
+    { id: '030712', text: '030712 - Scallops (live/fresh/chilled)' },
+    { id: '030713', text: '030713 - Mussels (live/fresh/chilled)' },
+    { id: '030714', text: '030714 - Cuttlefish and squid (live/fresh/chilled)' },
+    { id: '030715', text: '030715 - Octopus (live/fresh/chilled)' },
+    { id: '030716', text: '030716 - Clams, cockles and ark shells (live/fresh/chilled)' },
+    { id: '030717', text: '030717 - Abalone (live/fresh/chilled)' },
+    { id: '030719', text: '030719 - Other molluscs (live/fresh/chilled)' },
+    { id: '030721', text: '030721 - Scallops (frozen)' },
+    { id: '030722', text: '030722 - Mussels (frozen)' },
+    { id: '030723', text: '030723 - Oysters (frozen)' },
+    { id: '030724', text: '030724 - Cuttlefish and squid (frozen)' },
+    { id: '030725', text: '030725 - Octopus (frozen)' },
+    { id: '030726', text: '030726 - Clams, cockles and ark shells (frozen)' },
+    { id: '030727', text: '030727 - Abalone (frozen)' },
+    { id: '030729', text: '030729 - Other molluscs (frozen)' },
+    { id: '0308', text: '0308 - Aquatic invertebrates' },
+    { id: '030811', text: '030811 - Sea cucumbers (live/fresh/chilled)' },
+    { id: '030812', text: '030812 - Sea urchins (live/fresh/chilled)' },
+    { id: '030819', text: '030819 - Other aquatic invertebrates (live/fresh/chilled)' },
+    { id: '030821', text: '030821 - Sea cucumbers (frozen)' },
+    { id: '030822', text: '030822 - Sea urchins (frozen)' },
+    { id: '030829', text: '030829 - Other aquatic invertebrates (frozen)' },
+  ];
   
   const [filters, setFilters] = useState({
     reporterCode: '36', // Australia
@@ -38,10 +93,9 @@ const Explorer = () => {
   useEffect(() => {
     const fetchCatalogs = async () => {
       try {
-        const [reportersRes, partnersRes, commoditiesRes] = await Promise.all([
+        const [reportersRes, partnersRes] = await Promise.all([
           supabase.functions.invoke('comtrade-catalogs', { body: { type: 'reporters' } }),
-          supabase.functions.invoke('comtrade-catalogs', { body: { type: 'partners' } }),
-          supabase.functions.invoke('comtrade-catalogs', { body: { type: 'commodities' } })
+          supabase.functions.invoke('comtrade-catalogs', { body: { type: 'partners' } })
         ]);
 
         if (reportersRes.data?.results) {
@@ -49,9 +103,6 @@ const Explorer = () => {
         }
         if (partnersRes.data?.results) {
           setPartners(partnersRes.data.results);
-        }
-        if (commoditiesRes.data?.results) {
-          setCommodities(commoditiesRes.data.results);
         }
       } catch (error) {
         console.error('Error fetching catalogs:', error);
@@ -233,21 +284,16 @@ const Explorer = () => {
               <Select 
                 value={filters.cmdCode} 
                 onValueChange={(value) => setFilters({ ...filters, cmdCode: value })}
-                disabled={loadingCatalogs}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={loadingCatalogs ? "Loading..." : "Select HS Code"} />
+                  <SelectValue placeholder="Select HS Code" />
                 </SelectTrigger>
                 <SelectContent className="bg-background max-h-[300px]">
-                  {commodities.length > 0 ? (
-                    commodities.map((commodity) => (
-                      <SelectItem key={commodity.id} value={commodity.id}>
-                        {commodity.text}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="loading" disabled>Loading HS codes...</SelectItem>
-                  )}
+                  {seafoodHSCodes.map((code) => (
+                    <SelectItem key={code.id} value={code.id}>
+                      {code.text}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
