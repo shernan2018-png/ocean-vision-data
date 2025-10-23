@@ -20,6 +20,8 @@ serve(async (req) => {
       url = 'https://comtradeapi.un.org/files/v1/app/reference/Reporters.json';
     } else if (type === 'partners') {
       url = 'https://comtradeapi.un.org/files/v1/app/reference/partnerAreas.json';
+    } else if (type === 'commodities') {
+      url = 'https://comtradeapi.un.org/files/v1/app/reference/classificationHS.json';
     } else {
       throw new Error('Invalid catalog type');
     }

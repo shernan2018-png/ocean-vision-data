@@ -23,6 +23,7 @@ const Explorer = () => {
   const [chartData, setChartData] = useState<any[]>([]);
   const [reporters, setReporters] = useState<Country[]>([]);
   const [partners, setPartners] = useState<Country[]>([]);
+  const [commodities, setCommodities] = useState<Country[]>([]);
   const [loadingCatalogs, setLoadingCatalogs] = useState(true);
   
   const [filters, setFilters] = useState({
@@ -37,9 +38,10 @@ const Explorer = () => {
   useEffect(() => {
     const fetchCatalogs = async () => {
       try {
-        const [reportersRes, partnersRes] = await Promise.all([
+        const [reportersRes, partnersRes, commoditiesRes] = await Promise.all([
           supabase.functions.invoke('comtrade-catalogs', { body: { type: 'reporters' } }),
-          supabase.functions.invoke('comtrade-catalogs', { body: { type: 'partners' } })
+          supabase.functions.invoke('comtrade-catalogs', { body: { type: 'partners' } }),
+          supabase.functions.invoke('comtrade-catalogs', { body: { type: 'commodities' } })
         ]);
 
         if (reportersRes.data?.results) {
@@ -47,6 +49,9 @@ const Explorer = () => {
         }
         if (partnersRes.data?.results) {
           setPartners(partnersRes.data.results);
+        }
+        if (commoditiesRes.data?.results) {
+          setCommodities(commoditiesRes.data.results);
         }
       } catch (error) {
         console.error('Error fetching catalogs:', error);
@@ -225,17 +230,24 @@ const Explorer = () => {
 
             <div>
               <Label htmlFor="hsCode">{t('explorer.hsCode')}</Label>
-              <Select value={filters.cmdCode} onValueChange={(value) => setFilters({ ...filters, cmdCode: value })}>
+              <Select 
+                value={filters.cmdCode} 
+                onValueChange={(value) => setFilters({ ...filters, cmdCode: value })}
+                disabled={loadingCatalogs}
+              >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder={loadingCatalogs ? "Loading..." : "Select HS Code"} />
                 </SelectTrigger>
-                <SelectContent className="bg-background">
-                  <SelectItem value="030631">030631 - Shrimps/Prawns (Frozen)</SelectItem>
-                  <SelectItem value="030611">030611 - Rock Lobster/Spiny Lobster (Panulirus)</SelectItem>
-                  <SelectItem value="0302">0302 - Fresh Fish</SelectItem>
-                  <SelectItem value="0303">0303 - Frozen Fish</SelectItem>
-                  <SelectItem value="0306">0306 - All Crustaceans</SelectItem>
-                  <SelectItem value="0307">0307 - Molluscs</SelectItem>
+                <SelectContent className="bg-background max-h-[300px]">
+                  {commodities.length > 0 ? (
+                    commodities.map((commodity) => (
+                      <SelectItem key={commodity.id} value={commodity.id}>
+                        {commodity.text}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="loading" disabled>Loading HS codes...</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
