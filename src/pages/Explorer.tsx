@@ -4,8 +4,8 @@ import { Navbar } from '@/components/Navbar';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -93,7 +93,8 @@ const Explorer = () => {
     freq: 'M', // Monthly
     periodStart: new Date(2022, 0), // January 2022
     periodEnd: new Date(2022, 11), // December 2022
-    wholeYear: true, // Select whole year
+    yearStart: 2022, // For annual frequency
+    yearEnd: 2022, // For annual frequency
   });
 
   useEffect(() => {
@@ -128,13 +129,22 @@ const Explorer = () => {
   const handleSearch = async () => {
     setLoading(true);
     try {
-      // Format period based on selection
+      // Format period based on frequency
       let period: string;
-      if (filters.wholeYear && filters.freq === 'M') {
-        // Whole year: just send the year
-        period = filters.periodStart.getFullYear().toString();
-      } else if (filters.freq === 'M') {
-        // Range of months: generate comma-separated list
+      
+      if (filters.freq === 'A') {
+        // Annual frequency: range of years
+        if (filters.yearStart === filters.yearEnd) {
+          period = filters.yearStart.toString();
+        } else {
+          const years: string[] = [];
+          for (let year = filters.yearStart; year <= filters.yearEnd; year++) {
+            years.push(year.toString());
+          }
+          period = years.join(',');
+        }
+      } else {
+        // Monthly frequency: range of months
         const startYear = filters.periodStart.getFullYear();
         const startMonth = filters.periodStart.getMonth();
         const endYear = filters.periodEnd.getFullYear();
@@ -152,9 +162,6 @@ const Explorer = () => {
         }
         
         period = periods.join(',');
-      } else {
-        // Annual: just the year
-        period = filters.periodStart.getFullYear().toString();
       }
 
       const { data, error } = await supabase.functions.invoke('comtrade-data', {
@@ -245,10 +252,20 @@ const Explorer = () => {
         return;
       }
 
-      const yearStart = filters.periodStart.getFullYear();
-      const monthStart = (filters.periodStart.getMonth() + 1).toString().padStart(2, '0');
-      const yearEnd = filters.periodEnd.getFullYear();
-      const monthEnd = (filters.periodEnd.getMonth() + 1).toString().padStart(2, '0');
+      let periodStart: string;
+      let periodEnd: string;
+
+      if (filters.freq === 'A') {
+        periodStart = filters.yearStart.toString();
+        periodEnd = filters.yearEnd.toString();
+      } else {
+        const yearStart = filters.periodStart.getFullYear();
+        const monthStart = (filters.periodStart.getMonth() + 1).toString().padStart(2, '0');
+        const yearEnd = filters.periodEnd.getFullYear();
+        const monthEnd = (filters.periodEnd.getMonth() + 1).toString().padStart(2, '0');
+        periodStart = `${yearStart}-${monthStart}`;
+        periodEnd = `${yearEnd}-${monthEnd}`;
+      }
 
       const { error } = await supabase.from('saved_queries').insert({
         user_id: user.id,
@@ -258,8 +275,8 @@ const Explorer = () => {
         hs_code: filters.cmdCode,
         flow_code: filters.flowCode,
         frequency: filters.freq,
-        period_start: `${yearStart}-${monthStart}`,
-        period_end: `${yearEnd}-${monthEnd}`,
+        period_start: periodStart,
+        period_end: periodEnd,
       });
 
       if (error) throw error;
@@ -377,102 +394,92 @@ const Explorer = () => {
             </div>
 
             <div className="col-span-full">
-              <div className="flex items-center space-x-2 mb-4">
-                <Checkbox 
-                  id="wholeYear"
-                  checked={filters.wholeYear}
-                  onCheckedChange={(checked) => {
-                    setFilters({ ...filters, wholeYear: checked as boolean });
-                    if (checked) {
-                      // Set to whole year
-                      const year = filters.periodStart.getFullYear();
-                      setFilters({ 
-                        ...filters, 
-                        wholeYear: true,
-                        periodStart: new Date(year, 0),
-                        periodEnd: new Date(year, 11)
-                      });
-                    }
-                  }}
-                />
-                <Label htmlFor="wholeYear" className="text-sm font-medium cursor-pointer">
-                  Select whole year
-                </Label>
-              </div>
+              {filters.freq === 'A' ? (
+                // Annual frequency: Year selectors
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="yearStart">{t('explorer.yearStart') || 'Start Year'}</Label>
+                    <Input
+                      id="yearStart"
+                      type="number"
+                      min="1900"
+                      max="2100"
+                      value={filters.yearStart}
+                      onChange={(e) => setFilters({ ...filters, yearStart: parseInt(e.target.value) || 2022 })}
+                      placeholder="2022"
+                    />
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>{t('explorer.periodStart') || 'Period Start'}</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !filters.periodStart && "text-muted-foreground"
-                        )}
-                        disabled={filters.wholeYear}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {filters.periodStart ? format(filters.periodStart, "MMMM yyyy") : <span>Pick start month</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={filters.periodStart}
-                        onSelect={(date) => {
-                          if (date) {
-                            setFilters({ ...filters, periodStart: date });
-                            if (filters.wholeYear) {
-                              setFilters({ 
-                                ...filters, 
-                                periodStart: date,
-                                periodEnd: new Date(date.getFullYear(), 11)
-                              });
-                            }
-                          }
-                        }}
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <div>
+                    <Label htmlFor="yearEnd">{t('explorer.yearEnd') || 'End Year'}</Label>
+                    <Input
+                      id="yearEnd"
+                      type="number"
+                      min="1900"
+                      max="2100"
+                      value={filters.yearEnd}
+                      onChange={(e) => setFilters({ ...filters, yearEnd: parseInt(e.target.value) || 2022 })}
+                      placeholder="2022"
+                    />
+                  </div>
                 </div>
+              ) : (
+                // Monthly frequency: Calendar selectors
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>{t('explorer.periodStart') || 'Period Start'}</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !filters.periodStart && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {filters.periodStart ? format(filters.periodStart, "MMMM yyyy") : <span>Pick start month</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={filters.periodStart}
+                          onSelect={(date) => date && setFilters({ ...filters, periodStart: date })}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
 
-                <div>
-                  <Label>{t('explorer.periodEnd') || 'Period End'}</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !filters.periodEnd && "text-muted-foreground"
-                        )}
-                        disabled={filters.wholeYear}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {filters.periodEnd ? format(filters.periodEnd, "MMMM yyyy") : <span>Pick end month</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={filters.periodEnd}
-                        onSelect={(date) => date && setFilters({ ...filters, periodEnd: date })}
-                        initialFocus
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <div>
+                    <Label>{t('explorer.periodEnd') || 'Period End'}</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !filters.periodEnd && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {filters.periodEnd ? format(filters.periodEnd, "MMMM yyyy") : <span>Pick end month</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={filters.periodEnd}
+                          onSelect={(date) => date && setFilters({ ...filters, periodEnd: date })}
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
-              </div>
-
-              {filters.wholeYear && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Showing all months for {filters.periodStart.getFullYear()}
-                </p>
               )}
             </div>
           </div>
