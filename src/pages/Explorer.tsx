@@ -369,19 +369,24 @@ const Explorer = () => {
                       <th className="text-left p-2 font-semibold">Flow</th>
                       <th className="text-right p-2 font-semibold">Value (USD)</th>
                       <th className="text-right p-2 font-semibold">Quantity</th>
+                      <th className="text-right p-2 font-semibold">Precio Unitario</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {chartData.slice(0, 10).map((row: any, idx: number) => (
-                      <tr key={idx} className="border-b hover:bg-muted/50">
-                        <td className="p-2">{row.year}</td>
-                        <td className="p-2">{row.month || '-'}</td>
-                        <td className="p-2 text-sm">{row.commodity}</td>
-                        <td className="p-2">{row.flow}</td>
-                        <td className="p-2 text-right font-mono">{row.value.toLocaleString()}</td>
-                        <td className="p-2 text-right font-mono">{row.quantity.toLocaleString()} {row.qtyUnit}</td>
-                      </tr>
-                    ))}
+                    {chartData.slice(0, 10).map((row: any, idx: number) => {
+                      const unitPrice = row.quantity > 0 ? (row.value / row.quantity).toFixed(2) : 'N/A';
+                      return (
+                        <tr key={idx} className="border-b hover:bg-muted/50">
+                          <td className="p-2">{row.year}</td>
+                          <td className="p-2">{row.month || '-'}</td>
+                          <td className="p-2 text-sm">{row.commodity}</td>
+                          <td className="p-2">{row.flow}</td>
+                          <td className="p-2 text-right font-mono">{row.value.toLocaleString()}</td>
+                          <td className="p-2 text-right font-mono">{row.quantity.toLocaleString()} {row.qtyUnit}</td>
+                          <td className="p-2 text-right font-mono">{unitPrice}</td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
                 {chartData.length > 10 && (
