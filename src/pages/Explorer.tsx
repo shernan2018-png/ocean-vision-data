@@ -152,11 +152,16 @@ const Explorer = () => {
         };
       });
 
-      setChartData(transformed);
+      // Remove duplicates based on period
+      const uniqueData = transformed.filter((item, index, self) =>
+        index === self.findIndex((t) => t.period === item.period)
+      );
+
+      setChartData(uniqueData);
       
       toast({
         title: 'Success',
-        description: `${transformed.length} records loaded`,
+        description: `${uniqueData.length} records loaded`,
       });
     } catch (error) {
       console.error('Error fetching data:', error);
