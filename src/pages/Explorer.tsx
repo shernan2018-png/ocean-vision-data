@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Download, Save, Search, CalendarIcon } from 'lucide-react';
+import { Download, Save, Search, CalendarIcon, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -228,8 +229,11 @@ const Explorer = () => {
     if (chartData.length === 0) return;
 
     const csvContent = [
-      ['Period', 'Value (USD)', 'Quantity (kg)'],
-      ...chartData.map(row => [row.period, row.value, row.quantity])
+      ['Year', 'Month', 'Commodity', 'Reporting Country', 'Flow', 'Partner Country', 'Value (USD)', 'Quantity (kg)', 'Unit Price'],
+      ...chartData.map(row => {
+        const unitPrice = row.quantity > 0 ? (row.value / row.quantity).toFixed(2) : 'N/A';
+        return [row.year, row.month || '-', row.commodity, row.reporter, row.flow, row.partner, row.value, row.quantity, unitPrice];
+      })
     ].map(row => row.join(',')).join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -238,6 +242,31 @@ const Explorer = () => {
     a.href = url;
     a.download = `export-data-${Date.now()}.csv`;
     a.click();
+  };
+
+  const handleExportExcel = () => {
+    if (chartData.length === 0) return;
+
+    const excelData = chartData.map(row => {
+      const unitPrice = row.quantity > 0 ? (row.value / row.quantity).toFixed(2) : 'N/A';
+      return {
+        'Year': row.year,
+        'Month': row.month || '-',
+        'Commodity': row.commodity,
+        'Reporting Country': row.reporter,
+        'Flow': row.flow,
+        'Partner Country': row.partner,
+        'Value (USD)': row.value,
+        'Quantity (kg)': row.quantity,
+        'Unit Price': unitPrice
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Trade Data');
+    
+    XLSX.writeFile(workbook, `export-data-${Date.now()}.xlsx`);
   };
 
   const handleSaveQuery = async () => {
@@ -495,7 +524,11 @@ const Explorer = () => {
             </Button>
             <Button variant="outline" onClick={handleExportCSV} disabled={chartData.length === 0} className="gap-2">
               <Download className="h-4 w-4" />
-              {t('common.export')}
+              Export CSV
+            </Button>
+            <Button variant="outline" onClick={handleExportExcel} disabled={chartData.length === 0} className="gap-2">
+              <FileSpreadsheet className="h-4 w-4" />
+              Export Excel
             </Button>
           </div>
         </Card>
