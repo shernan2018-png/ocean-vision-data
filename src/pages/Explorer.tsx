@@ -456,7 +456,7 @@ const Explorer = () => {
                 // Monthly frequency: Calendar selectors
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>{t('explorer.periodStart') || 'Period Start'}</Label>
+                    <Label>{t('Inicio') || 'Period Start'}</Label>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
