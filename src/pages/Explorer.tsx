@@ -6,14 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Download, Save, Search, CalendarIcon, FileSpreadsheet } from 'lucide-react';
+import { Download, Save, Search, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 interface Country {
@@ -453,68 +450,108 @@ const Explorer = () => {
                   </div>
                 </div>
               ) : (
-                // Monthly frequency: Calendar selectors
+                // Monthly frequency: Month and Year selectors
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
+                  <div className="space-y-2">
                     <Label>{t('Inicio Periodo') || 'Period Start'}</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !filters.periodStart && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {filters.periodStart ? format(filters.periodStart, "MMMM yyyy") : <span>Pick start month</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={filters.periodStart}
-                          onSelect={(date) => date && setFilters({ ...filters, periodStart: date })}
-                          initialFocus
-                          className="pointer-events-auto"
-                          captionLayout="dropdown-buttons"
-                          fromYear={2000}
-                          toYear={2030}
-                          hideDays
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Select
+                        value={filters.periodStart.getMonth().toString()}
+                        onValueChange={(value) => {
+                          const newDate = new Date(filters.periodStart);
+                          newDate.setMonth(parseInt(value));
+                          setFilters({ ...filters, periodStart: newDate });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">Enero</SelectItem>
+                          <SelectItem value="1">Febrero</SelectItem>
+                          <SelectItem value="2">Marzo</SelectItem>
+                          <SelectItem value="3">Abril</SelectItem>
+                          <SelectItem value="4">Mayo</SelectItem>
+                          <SelectItem value="5">Junio</SelectItem>
+                          <SelectItem value="6">Julio</SelectItem>
+                          <SelectItem value="7">Agosto</SelectItem>
+                          <SelectItem value="8">Septiembre</SelectItem>
+                          <SelectItem value="9">Octubre</SelectItem>
+                          <SelectItem value="10">Noviembre</SelectItem>
+                          <SelectItem value="11">Diciembre</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={filters.periodStart.getFullYear().toString()}
+                        onValueChange={(value) => {
+                          const newDate = new Date(filters.periodStart);
+                          newDate.setFullYear(parseInt(value));
+                          setFilters({ ...filters, periodStart: newDate });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 31 }, (_, i) => 2000 + i).map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
-                  <div>
+                  <div className="space-y-2">
                     <Label>{t('Fin Periodo') || 'Period End'}</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !filters.periodEnd && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {filters.periodEnd ? format(filters.periodEnd, "MMMM yyyy") : <span>Pick end month</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={filters.periodEnd}
-                          onSelect={(date) => date && setFilters({ ...filters, periodEnd: date })}
-                          initialFocus
-                          className="pointer-events-auto"
-                          captionLayout="dropdown-buttons"
-                          fromYear={2000}
-                          toYear={2030}
-                          hideDays
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Select
+                        value={filters.periodEnd.getMonth().toString()}
+                        onValueChange={(value) => {
+                          const newDate = new Date(filters.periodEnd);
+                          newDate.setMonth(parseInt(value));
+                          setFilters({ ...filters, periodEnd: newDate });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">Enero</SelectItem>
+                          <SelectItem value="1">Febrero</SelectItem>
+                          <SelectItem value="2">Marzo</SelectItem>
+                          <SelectItem value="3">Abril</SelectItem>
+                          <SelectItem value="4">Mayo</SelectItem>
+                          <SelectItem value="5">Junio</SelectItem>
+                          <SelectItem value="6">Julio</SelectItem>
+                          <SelectItem value="7">Agosto</SelectItem>
+                          <SelectItem value="8">Septiembre</SelectItem>
+                          <SelectItem value="9">Octubre</SelectItem>
+                          <SelectItem value="10">Noviembre</SelectItem>
+                          <SelectItem value="11">Diciembre</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={filters.periodEnd.getFullYear().toString()}
+                        onValueChange={(value) => {
+                          const newDate = new Date(filters.periodEnd);
+                          newDate.setFullYear(parseInt(value));
+                          setFilters({ ...filters, periodEnd: newDate });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 31 }, (_, i) => 2000 + i).map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               )}
