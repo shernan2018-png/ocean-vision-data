@@ -477,6 +477,13 @@ const Explorer = () => {
                           onSelect={(date) => date && setFilters({ ...filters, periodStart: date })}
                           initialFocus
                           className="pointer-events-auto"
+                          captionLayout="dropdown-buttons"
+                          fromYear={2000}
+                          toYear={2030}
+                          classNames={{
+                            day_hidden: "hidden",
+                            month: "space-y-4",
+                          }}
                         />
                       </PopoverContent>
                     </Popover>
@@ -504,6 +511,13 @@ const Explorer = () => {
                           onSelect={(date) => date && setFilters({ ...filters, periodEnd: date })}
                           initialFocus
                           className="pointer-events-auto"
+                          captionLayout="dropdown-buttons"
+                          fromYear={2000}
+                          toYear={2030}
+                          classNames={{
+                            day_hidden: "hidden",
+                            month: "space-y-4",
+                          }}
                         />
                       </PopoverContent>
                     </Popover>
