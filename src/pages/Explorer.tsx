@@ -424,7 +424,7 @@ const Explorer = () => {
                 // Annual frequency: Year selectors
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="yearStart">{t('explorer.yearStart') || 'Start Year'}</Label>
+                    <Label htmlFor="yearStart">{t('Inicio Periodo') || 'Period Start'}</Label>
                     <Input
                       id="yearStart"
                       type="number"
@@ -437,7 +437,7 @@ const Explorer = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="yearEnd">{t('explorer.yearEnd') || 'End Year'}</Label>
+                    <Label htmlFor="yearEnd">{t('Fin Periodo') || 'Period End'}</Label>
                     <Input
                       id="yearEnd"
                       type="number"
