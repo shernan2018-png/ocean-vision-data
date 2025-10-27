@@ -595,7 +595,7 @@ const Explorer = () => {
                       <th className="text-right p-2 font-semibold">Value (USD)</th>
                       <th className="text-right p-2 font-semibold">Quantity</th>
                       <th className="text-left p-2 font-semibold">Unit</th>
-                      <th className="text-right p-2 font-semibold">Precio Unitario</th>
+                      <th className="text-right p-2 font-semibold">Precio Unitario (USD)</th>
                     </tr>
                   </thead>
                   <tbody>
