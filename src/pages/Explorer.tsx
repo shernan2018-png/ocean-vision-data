@@ -480,10 +480,7 @@ const Explorer = () => {
                           captionLayout="dropdown-buttons"
                           fromYear={2000}
                           toYear={2030}
-                          classNames={{
-                            day_hidden: "hidden",
-                            month: "space-y-4",
-                          }}
+                          hideDays
                         />
                       </PopoverContent>
                     </Popover>
@@ -514,10 +511,7 @@ const Explorer = () => {
                           captionLayout="dropdown-buttons"
                           fromYear={2000}
                           toYear={2030}
-                          classNames={{
-                            day_hidden: "hidden",
-                            month: "space-y-4",
-                          }}
+                          hideDays
                         />
                       </PopoverContent>
                     </Popover>
