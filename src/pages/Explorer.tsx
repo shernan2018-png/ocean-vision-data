@@ -589,9 +589,9 @@ const Explorer = () => {
                       <th className="text-left p-2 font-semibold">Year</th>
                       <th className="text-left p-2 font-semibold">Month</th>
                       <th className="text-left p-2 font-semibold">Commodity</th>
-                      <th className="text-left p-2 font-semibold">Reporting Country</th>
-                      <th className="text-left p-2 font-semibold">Flow</th>
-                      <th className="text-left p-2 font-semibold">Partner Country</th>
+                      <th className="text-left p-2 px-4 font-semibold">Reporting Country</th>
+                      <th className="text-left p-2 px-4 font-semibold">Flow</th>
+                      <th className="text-left p-2 px-4 font-semibold">Partner Country</th>
                       <th className="text-right p-2 font-semibold">Value (USD)</th>
                       <th className="text-right p-2 font-semibold">Quantity</th>
                       <th className="text-right p-2 font-semibold">Precio Unitario</th>
@@ -605,9 +605,9 @@ const Explorer = () => {
                           <td className="p-2">{row.year}</td>
                           <td className="p-2">{row.month || '-'}</td>
                           <td className="p-2 text-sm">{row.commodity}</td>
-                          <td className="p-2">{row.reporter}</td>
-                          <td className="p-2">{row.flow}</td>
-                          <td className="p-2">{row.partner}</td>
+                          <td className="p-2 px-4">{row.reporter}</td>
+                          <td className="p-2 px-4">{row.flow}</td>
+                          <td className="p-2 px-4">{row.partner}</td>
                           <td className="p-2 text-right font-mono">{row.value.toLocaleString()}</td>
                           <td className="p-2 text-right font-mono">{row.quantity.toLocaleString()} {row.qtyUnit}</td>
                           <td className="p-2 text-right font-mono">{unitPrice}</td>
