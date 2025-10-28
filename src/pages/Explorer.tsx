@@ -1634,43 +1634,34 @@ const Explorer = () => {
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   📈 Pronóstico de Precios Unitarios
                 </h3>
-                <ResponsiveContainer width="100%" height={350}>
-                  <LineChart data={[...priceChartData.slice(-12), ...priceForecastData.map(f => ({ period: f.period, forecast: f.forecast }))]}>
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart data={priceForecastData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="period" />
-                    <YAxis label={{ value: 'Precio Unitario (USD/kg)', angle: -90, position: 'insideLeft' }} />
-                    <Tooltip />
+                    <XAxis 
+                      dataKey="period" 
+                      label={{ value: 'Horizonte (Meses/Periodos Futuros)', position: 'insideBottom', offset: -5 }}
+                    />
+                    <YAxis 
+                      label={{ value: 'Precio Pronosticado (USD)', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Tooltip 
+                      formatter={(value: number) => [`$${value.toFixed(2)}`, 'Pronóstico']}
+                      labelFormatter={(label) => `Periodo: ${label}`}
+                    />
                     <Legend />
-                    {/* Historical data line */}
-                    {priceChartData.length > 0 && Object.keys(priceChartData[0])
-                      .filter(key => key !== 'period' && key.includes('→'))
-                      .slice(0, 1)
-                      .map((seriesName) => (
-                        <Line 
-                          key={seriesName}
-                          type="monotone" 
-                          dataKey={seriesName} 
-                          stroke="hsl(var(--primary))" 
-                          strokeWidth={2}
-                          name="Histórico"
-                          connectNulls={false}
-                          dot={{ r: 4 }}
-                        />
-                      ))}
-                    {/* Forecast line */}
                     <Line 
                       type="monotone" 
                       dataKey="forecast" 
                       stroke="#f97316" 
                       strokeWidth={3}
-                      strokeDasharray="5 5"
-                      name="Pronóstico"
+                      name="Pronóstico (USD)"
                       dot={{ r: 6, fill: '#f97316' }}
+                      activeDot={{ r: 8 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
-                <p className="text-xs text-muted-foreground mt-2">
-                  📊 El pronóstico se basa en la tendencia histórica y las variables exógenas seleccionadas
+                <p className="text-xs text-muted-foreground mt-2 italic text-center">
+                  Pronóstico generado con modelo NARX – Sección Premium
                 </p>
               </div>
 
@@ -1680,10 +1671,8 @@ const Explorer = () => {
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="border-b bg-muted/50">
-                        <th className="text-left p-3 font-semibold">Periodo</th>
-                        <th className="text-right p-3 font-semibold">Pronóstico</th>
-                        <th className="text-right p-3 font-semibold">Límite Inferior</th>
-                        <th className="text-right p-3 font-semibold">Límite Superior</th>
+                        <th className="text-left p-3 font-semibold">Mes</th>
+                        <th className="text-right p-3 font-semibold">Precio Pronosticado (USD)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1691,15 +1680,13 @@ const Explorer = () => {
                         <tr key={index} className="border-b hover:bg-muted/50">
                           <td className="p-3 font-medium">{row.period}</td>
                           <td className="p-3 text-right font-mono text-primary font-bold">${row.forecast.toFixed(2)}</td>
-                          <td className="p-3 text-right font-mono text-muted-foreground">${row.lower.toFixed(2)}</td>
-                          <td className="p-3 text-right font-mono text-muted-foreground">${row.upper.toFixed(2)}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  💡 Los límites de confianza representan una estimación del rango probable del precio (±15%)
+                <p className="text-xs text-muted-foreground mt-2 italic text-center">
+                  Pronóstico generado con modelo NARX – Sección Premium
                 </p>
               </div>
             </div>
