@@ -510,13 +510,10 @@ const Explorer = () => {
 
       const baseSeriesName = `${reporter.text} → ${partner.text}`;
       
-      // Extract base series (dependent variable)
+      // Extract base series (dependent variable) - X1
       const baseSeries = priceChartData
-        .map(item => ({
-          period: item.period,
-          value: item[baseSeriesName] || 0
-        }))
-        .filter(item => item.value > 0);
+        .map(item => item[baseSeriesName])
+        .filter(value => value !== undefined && value !== null && value > 0);
 
       if (baseSeries.length < 3) {
         toast({
@@ -528,28 +525,41 @@ const Explorer = () => {
         return;
       }
 
-      // Collect exogenous variables
-      const exogenousVariables: { name: string; values: number[] }[] = [];
+      // Build the inputs object for the JSON body
+      const inputs: any = {
+        X1: baseSeries // Serie de precios del país reportero → socio
+      };
       
+      // Collect exogenous variables X2-X5 from additional countries
       forecastInputs.additionalCountries.forEach((countryCode, index) => {
         if (countryCode && countryCode !== 'none' && countryCode !== '') {
           const country = reporters.find(r => String(r.id) === String(countryCode));
           if (country) {
             const seriesName = `${reporter.text} → ${country.text}`;
-            const values = priceChartData.map(item => item[seriesName] || 0);
-            if (values.some(v => v > 0)) {
-              exogenousVariables.push({ name: country.text, values });
+            const values = priceChartData
+              .map(item => item[seriesName])
+              .filter(value => value !== undefined && value !== null && value > 0);
+            
+            if (values.length > 0) {
+              inputs[`X${index + 2}`] = values; // X2, X3, X4, X5
             }
           }
         }
       });
 
-      console.log('Base series:', baseSeries);
-      console.log('Exogenous variables:', exogenousVariables);
+      // Build the complete request body
+      const requestBody = {
+        inputs,
+        horizon: 6
+      };
+
+      console.log('📊 JSON Body construido:', JSON.stringify(requestBody, null, 2));
+      console.log('Base series (X1):', baseSeries);
+      console.log('Variables exógenas:', Object.keys(inputs).filter(k => k !== 'X1'));
 
       // Simple forecasting using linear regression with exogenous variables
       const forecastPeriods = 6; // Forecast next 6 periods
-      const values = baseSeries.map(item => item.value);
+      const values = baseSeries;
       
       // Calculate linear trend
       const n = values.length;
@@ -569,20 +579,23 @@ const Explorer = () => {
 
       // Adjust forecast based on exogenous variables
       let exoAdjustment = 0;
-      if (exogenousVariables.length > 0) {
-        exogenousVariables.forEach(exo => {
-          const exoValues = exo.values.filter(v => v > 0);
-          if (exoValues.length > 0) {
-            const lastExoValue = exoValues[exoValues.length - 1];
-            const exoMean = exoValues.reduce((a, b) => a + b, 0) / exoValues.length;
-            // Each exogenous variable contributes 10% influence
-            exoAdjustment += (lastExoValue - exoMean) * 0.1;
+      const exoCount = Object.keys(inputs).length - 1; // Exclude X1
+      if (exoCount > 0) {
+        Object.keys(inputs).forEach(key => {
+          if (key !== 'X1') {
+            const exoValues = inputs[key];
+            if (exoValues.length > 0) {
+              const lastExoValue = exoValues[exoValues.length - 1];
+              const exoMean = exoValues.reduce((a: number, b: number) => a + b, 0) / exoValues.length;
+              // Each exogenous variable contributes 10% influence
+              exoAdjustment += (lastExoValue - exoMean) * 0.1;
+            }
           }
         });
       }
 
       // Generate forecast values
-      const lastPeriod = baseSeries[baseSeries.length - 1].period;
+      const lastPeriod = priceChartData[priceChartData.length - 1].period;
       const forecastArray: { period: string; forecast: number; lower: number; upper: number }[] = [];
       
       for (let i = 1; i <= forecastPeriods; i++) {
@@ -606,7 +619,7 @@ const Explorer = () => {
 
       toast({
         title: "Pronóstico generado",
-        description: `Se generó un pronóstico para los próximos ${forecastPeriods} periodos usando ${exogenousVariables.length} variable(s) exógena(s)`,
+        description: `Se generó un pronóstico para los próximos ${forecastPeriods} periodos usando ${exoCount} variable(s) exógena(s)`,
       });
 
     } catch (error) {
