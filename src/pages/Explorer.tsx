@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Download, Save, Search, FileSpreadsheet, TrendingUp } from 'lucide-react';
+import { Download, Save, Search, FileSpreadsheet, TrendingUp, Star } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -97,11 +97,10 @@ const Explorer = () => {
 
   // Forecast states
   const [forecastInputs, setForecastInputs] = useState({
-    X1: '',
-    X2: '',
-    X3: '',
-    X4: '',
-    X5: '',
+    reporterCode: '36', // Australia
+    partnerCode: '156', // China
+    baseVariable: 'reporter', // reporter or partner
+    additionalCountries: ['', '', '', ''], // Up to 4 additional countries
     horizon: '6',
   });
   const [forecastData, setForecastData] = useState<any[]>([]);
@@ -333,30 +332,14 @@ const Explorer = () => {
     }
   };
 
-  const parseInputArray = (input: string): number[] => {
-    return input
-      .split(',')
-      .map(v => parseFloat(v.trim()))
-      .filter(v => !isNaN(v));
-  };
-
   const handleGenerateForecast = async () => {
     setLoadingForecast(true);
     try {
-      const inputs = {
-        X1: parseInputArray(forecastInputs.X1),
-        X2: parseInputArray(forecastInputs.X2),
-        X3: parseInputArray(forecastInputs.X3),
-        X4: parseInputArray(forecastInputs.X4),
-        X5: parseInputArray(forecastInputs.X5),
-      };
-
       // Validation
-      const hasValidInputs = Object.values(inputs).some(arr => arr.length > 0);
-      if (!hasValidInputs) {
+      if (!forecastInputs.reporterCode || !forecastInputs.partnerCode) {
         toast({
           title: 'Error',
-          description: 'Por favor ingresa al menos un conjunto de valores',
+          description: 'Por favor selecciona país reportero y país socio',
           variant: 'destructive',
         });
         return;
@@ -371,6 +354,21 @@ const Explorer = () => {
         });
         return;
       }
+
+      // Build inputs object for the MATLAB model
+      // X1 will be the base variable (reporter or partner price)
+      // X2-X5 will be the additional countries if selected
+      const inputs: any = {};
+      
+      // For now, we'll pass placeholder arrays since we need historical data
+      // In a real implementation, you would fetch this data from your API
+      inputs.X1 = [2.3, 2.5, 2.7, 2.8]; // Placeholder for base variable
+      
+      // Add additional countries as X2-X5
+      const validAdditionalCountries = forecastInputs.additionalCountries.filter(c => c !== '');
+      validAdditionalCountries.forEach((country, index) => {
+        inputs[`X${index + 2}`] = [1.0, 1.5, 2.0]; // Placeholder data
+      });
 
       const response = await fetch('http://localhost:8080/forecast', {
         method: 'POST',
@@ -414,6 +412,12 @@ const Explorer = () => {
     } finally {
       setLoadingForecast(false);
     }
+  };
+
+  const handleAdditionalCountryChange = (index: number, value: string) => {
+    const newAdditionalCountries = [...forecastInputs.additionalCountries];
+    newAdditionalCountries[index] = value;
+    setForecastInputs({ ...forecastInputs, additionalCountries: newAdditionalCountries });
   };
 
 
@@ -675,74 +679,116 @@ const Explorer = () => {
         </Card>
 
         {/* Forecast Section */}
-        <Card className="p-6 mb-8 shadow-ocean">
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            Pronóstico de precios
-          </h2>
+        <Card className="p-6 mb-8 shadow-ocean border-2 border-primary/20">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <Star className="h-5 w-5 text-primary fill-primary" />
+              Pronóstico de precios (Premium)
+            </h2>
+            <span className="text-xs text-muted-foreground bg-primary/10 px-3 py-1 rounded-full">
+              Solo usuarios premium
+            </span>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             <div>
-              <Label htmlFor="X1">X1 (valores separados por comas)</Label>
-              <Input
-                id="X1"
-                type="text"
-                placeholder="2.3, 2.5, 2.7, 2.8"
-                value={forecastInputs.X1}
-                onChange={(e) => setForecastInputs({ ...forecastInputs, X1: e.target.value })}
-              />
+              <Label htmlFor="forecast-reporter">País reportero</Label>
+              <Select 
+                value={forecastInputs.reporterCode} 
+                onValueChange={(value) => setForecastInputs({ ...forecastInputs, reporterCode: value })}
+                disabled={loadingCatalogs}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingCatalogs ? "Cargando..." : "Seleccionar país"} />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {reporters.map((country) => (
+                    <SelectItem key={country.id} value={country.id}>
+                      {country.text}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
-              <Label htmlFor="X2">X2 (valores separados por comas)</Label>
-              <Input
-                id="X2"
-                type="text"
-                placeholder="5.2, 5.5, 5.7"
-                value={forecastInputs.X2}
-                onChange={(e) => setForecastInputs({ ...forecastInputs, X2: e.target.value })}
-              />
+              <Label htmlFor="forecast-partner">País socio</Label>
+              <Select 
+                value={forecastInputs.partnerCode} 
+                onValueChange={(value) => setForecastInputs({ ...forecastInputs, partnerCode: value })}
+                disabled={loadingCatalogs}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingCatalogs ? "Cargando..." : "Seleccionar socio"} />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {partners.map((country) => (
+                    <SelectItem key={country.id} value={country.id}>
+                      {country.text}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
-              <Label htmlFor="X3">X3 (valores separados por comas)</Label>
-              <Input
-                id="X3"
-                type="text"
-                placeholder="3.1, 3.4, 3.5, 3.7"
-                value={forecastInputs.X3}
-                onChange={(e) => setForecastInputs({ ...forecastInputs, X3: e.target.value })}
-              />
+              <Label htmlFor="base-variable">Variable base</Label>
+              <Select 
+                value={forecastInputs.baseVariable} 
+                onValueChange={(value) => setForecastInputs({ ...forecastInputs, baseVariable: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="reporter">
+                    Precio unitario (USD) - País reportero
+                  </SelectItem>
+                  <SelectItem value="partner">
+                    Precio unitario (USD) - País socio
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="col-span-full">
+              <Label className="mb-2 block">Variables adicionales (hasta 4 países exógenos)</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                {[0, 1, 2, 3].map((index) => (
+                  <div key={index}>
+                    <Label className="text-xs text-muted-foreground mb-1">Variable {index + 1}</Label>
+                    <Select 
+                      value={forecastInputs.additionalCountries[index]} 
+                      onValueChange={(value) => handleAdditionalCountryChange(index, value)}
+                      disabled={loadingCatalogs}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Opcional" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-50">
+                        <SelectItem value="">Ninguno</SelectItem>
+                        {reporters.map((country) => (
+                          <SelectItem key={country.id} value={country.id}>
+                            {country.text}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Ejemplo: usar precios de México, EE.UU., Japón y Noruega para predecir Australia → China
+              </p>
             </div>
 
             <div>
-              <Label htmlFor="X4">X4 (valores separados por comas)</Label>
-              <Input
-                id="X4"
-                type="text"
-                placeholder="7.8, 7.9, 8.0, 8.1, 8.3"
-                value={forecastInputs.X4}
-                onChange={(e) => setForecastInputs({ ...forecastInputs, X4: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="X5">X5 (valores separados por comas)</Label>
-              <Input
-                id="X5"
-                type="text"
-                placeholder="1.5, 1.6, 1.7, 1.8"
-                value={forecastInputs.X5}
-                onChange={(e) => setForecastInputs({ ...forecastInputs, X5: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="horizon">Horizon (meses a pronosticar)</Label>
+              <Label htmlFor="horizon">Horizonte de predicción (meses)</Label>
               <Input
                 id="horizon"
                 type="number"
                 min="1"
+                max="24"
                 placeholder="6"
                 value={forecastInputs.horizon}
                 onChange={(e) => setForecastInputs({ ...forecastInputs, horizon: e.target.value })}
