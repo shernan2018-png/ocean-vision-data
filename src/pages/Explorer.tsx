@@ -493,12 +493,12 @@ const Explorer = () => {
         const country = countriesToPlot[i];
         
         try {
-          console.log(`Fetching data for ${country.name} (${country.code})`);
+          console.log(`[${i + 1}/${countriesToPlot.length}] Fetching data for ${country.name} (${country.code})`);
           
-          // Add delay between requests (3 seconds) to avoid rate limiting
+          // Add delay between requests (4 seconds) to avoid rate limiting
           if (i > 0) {
-            console.log(`Waiting 3 seconds before next request...`);
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            console.log(`Waiting 4 seconds before next request...`);
+            await new Promise(resolve => setTimeout(resolve, 4000));
           }
           
           const { data, error } = await supabase.functions.invoke('comtrade-data', {
@@ -513,7 +513,7 @@ const Explorer = () => {
           });
 
           if (error) {
-            console.error(`Error for ${country.name}:`, error);
+            console.error(`❌ Error for ${country.name}:`, error);
             allCountryData.push({
               countryName: country.name,
               countryCode: country.code,
@@ -523,7 +523,11 @@ const Explorer = () => {
           }
 
           const apiData = data?.data || [];
-          console.log(`Data received for ${country.name}:`, apiData.length, 'records');
+          console.log(`✓ Data received for ${country.name}:`, apiData.length, 'records');
+          
+          if (apiData.length === 0) {
+            console.warn(`⚠️ No data found for ${country.name}`);
+          }
           
           allCountryData.push({
             countryName: country.name,
@@ -534,7 +538,7 @@ const Explorer = () => {
             }))
           });
         } catch (error) {
-          console.error(`Error fetching data for ${country.name}:`, error);
+          console.error(`❌ Exception fetching data for ${country.name}:`, error);
           allCountryData.push({
             countryName: country.name,
             countryCode: country.code,
@@ -542,6 +546,9 @@ const Explorer = () => {
           });
         }
       }
+
+      console.log(`📊 Total countries processed: ${allCountryData.length}`);
+      console.log(`📈 Countries with data: ${allCountryData.filter(d => d.data.length > 0).length}`);
 
       console.log('All country data:', allCountryData);
 
