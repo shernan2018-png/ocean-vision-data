@@ -450,6 +450,7 @@ const Explorer = () => {
       });
 
       console.log('Countries with names:', countriesToPlot);
+      console.log('🌍 Países a graficar:', countriesToPlot.map(c => `${c.name} (${c.code})`).join(', '));
 
       // Format period based on frequency
       let period: string;
