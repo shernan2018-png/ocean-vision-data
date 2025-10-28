@@ -438,6 +438,8 @@ const Explorer = () => {
         ...forecastInputs.additionalCountries.filter(code => code !== 'none' && code !== '')
       ];
 
+      console.log('Countries to plot:', allCountryCodes);
+
       // Get country names from the reporters catalog
       const countriesToPlot = allCountryCodes.map(code => {
         const country = reporters.find(r => r.id === code);
@@ -446,6 +448,8 @@ const Explorer = () => {
           name: country ? country.text : code
         };
       });
+
+      console.log('Countries with names:', countriesToPlot);
 
       // Format period based on frequency
       let period: string;
@@ -480,9 +484,13 @@ const Explorer = () => {
         period = periods.join(',');
       }
 
+      console.log('Period:', period);
+
       // Fetch data for each country
       const dataPromises = countriesToPlot.map(async (country) => {
         try {
+          console.log(`Fetching data for ${country.name} (${country.code})`);
+          
           const { data, error } = await supabase.functions.invoke('comtrade-data', {
             body: {
               reporterCode: country.code,
@@ -494,9 +502,14 @@ const Explorer = () => {
             }
           });
 
-          if (error) throw error;
+          if (error) {
+            console.error(`Error for ${country.name}:`, error);
+            throw error;
+          }
 
           const apiData = data?.data || [];
+          console.log(`Data received for ${country.name}:`, apiData.length, 'records');
+          
           return {
             countryName: country.name,
             countryCode: country.code,
@@ -516,11 +529,13 @@ const Explorer = () => {
       });
 
       const allCountryData = await Promise.all(dataPromises);
+      console.log('All country data:', allCountryData);
 
       // Combine all data by period
       const periodMap = new Map<string, any>();
       
       allCountryData.forEach(countryData => {
+        console.log(`Processing ${countryData.countryName}: ${countryData.data.length} records`);
         if (countryData.data.length > 0) {
           countryData.data.forEach((item: any) => {
             if (!periodMap.has(item.period)) {
@@ -536,12 +551,14 @@ const Explorer = () => {
         a.period.localeCompare(b.period)
       );
 
+      console.log('Final chart data:', chartData);
+
       setPriceChartData(chartData);
       
       const countriesWithData = allCountryData.filter(d => d.data.length > 0);
       toast({
         title: 'Gráfica generada',
-        description: `Se cargaron datos de ${countriesWithData.length} país(es)`,
+        description: `Se cargaron datos de ${countriesWithData.length} país(es): ${countriesWithData.map(c => c.countryName).join(', ')}`,
       });
     } catch (error) {
       console.error('Error plotting prices:', error);
