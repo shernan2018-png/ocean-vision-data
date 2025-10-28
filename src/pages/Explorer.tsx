@@ -224,7 +224,16 @@ const Explorer = () => {
         index === self.findIndex((t) => t.period === item.period)
       );
 
-      setChartData(uniqueData);
+      // Sort by period (ascending order)
+      const sortedData = uniqueData.sort((a, b) => {
+        const periodA = String(a.period);
+        const periodB = String(b.period);
+        return periodA.localeCompare(periodB);
+      });
+
+      console.log('📊 Data sorted by period:', sortedData.map(d => d.period));
+
+      setChartData(sortedData);
       
       toast({
         title: 'Success',
@@ -548,10 +557,17 @@ const Explorer = () => {
             console.warn(`⚠️ No data found for ${country.name}`);
           }
           
+          // Sort data by period before processing
+          const sortedApiData = apiData.sort((a: any, b: any) => {
+            const periodA = String(a.period);
+            const periodB = String(b.period);
+            return periodA.localeCompare(periodB);
+          });
+          
           allCountryData.push({
             countryName: country.name,
             countryCode: country.code,
-            data: apiData.map((item: any) => ({
+            data: sortedApiData.map((item: any) => ({
               period: item.period,
               unitPrice: item.netWgt > 0 ? (item.primaryValue / item.netWgt) : 0
             }))
