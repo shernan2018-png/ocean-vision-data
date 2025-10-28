@@ -595,9 +595,13 @@ const Explorer = () => {
         a.period.localeCompare(b.period)
       );
 
-      console.log('📈 Final chart data (first 3 periods):', chartData.slice(0, 3));
-      console.log('📈 Chart data keys:', chartData.length > 0 ? Object.keys(chartData[0]) : 'No data');
-      console.log('📈 All country names in chart:', chartData.length > 0 ? Object.keys(chartData[0]).filter(k => k !== 'period') : 'No data');
+      console.log('📈 Final chart data (first 3 periods):', JSON.stringify(chartData.slice(0, 3), null, 2));
+      console.log('📈 Chart data length:', chartData.length);
+      if (chartData.length > 0) {
+        console.log('📈 Chart data keys (all columns):', Object.keys(chartData[0]));
+        console.log('📈 Country columns in chart:', Object.keys(chartData[0]).filter(k => k !== 'period'));
+        console.log('📈 Sample data from first period:', chartData[0]);
+      }
 
       setPriceChartData(chartData);
       
