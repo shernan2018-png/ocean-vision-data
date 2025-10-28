@@ -108,7 +108,7 @@ const Explorer = () => {
     yearStart: 2022,
     yearEnd: 2022,
     additionalCountries: ['none', 'none', 'none', 'none'], // Up to 4 additional countries
-    horizon: '6',
+    horizon: '3',
   });
   const [forecastData, setForecastData] = useState<any[]>([]);
   const [loadingForecast, setLoadingForecast] = useState(false);
@@ -1786,6 +1786,22 @@ const Explorer = () => {
               <p className="text-xs text-muted-foreground mt-2">
                 Ejemplo: usar precios de México, EE.UU., Japón y Noruega para predecir Australia → China
               </p>
+            </div>
+
+            <div className="col-span-full">
+              <Label className="mb-2 block">Selector de horizonte</Label>
+              <Select 
+                value={forecastInputs.horizon} 
+                onValueChange={(value) => setForecastInputs({ ...forecastInputs, horizon: value })}
+              >
+                <SelectTrigger className="w-full md:w-48">
+                  <SelectValue placeholder="Seleccionar horizonte" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="3">3 meses</SelectItem>
+                  <SelectItem value="6">6 meses</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
           </div>
