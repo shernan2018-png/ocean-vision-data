@@ -513,6 +513,18 @@ const Explorer = () => {
       }
 
       console.log('Period:', period);
+      console.log('Total periods requested:', period.split(',').length);
+
+      // Split periods into chunks of 12 (Comtrade API limit)
+      const periodList = period.split(',');
+      const periodChunks: string[] = [];
+      
+      for (let i = 0; i < periodList.length; i += 12) {
+        const chunk = periodList.slice(i, i + 12);
+        periodChunks.push(chunk.join(','));
+      }
+      
+      console.log(`Divided into ${periodChunks.length} chunks:`, periodChunks.map(c => c.split(',').length + ' periods'));
 
       // Fetch data for each country SEQUENTIALLY with delay to avoid rate limiting
       const allCountryData = [];
@@ -523,42 +535,55 @@ const Explorer = () => {
         try {
           console.log(`[${i + 1}/${countriesToPlot.length}] Fetching data for ${country.name} (${country.code})`);
           
-          // Add delay between requests (4 seconds) to avoid rate limiting
+          // Add delay between countries (4 seconds) to avoid rate limiting
           if (i > 0) {
-            console.log(`Waiting 4 seconds before next request...`);
+            console.log(`Waiting 4 seconds before next country...`);
             await new Promise(resolve => setTimeout(resolve, 4000));
           }
           
-          const { data, error } = await supabase.functions.invoke('comtrade-data', {
-            body: {
-              reporterCode: country.code,
-              partnerCode: forecastInputs.partnerCode,
-              cmdCode: forecastInputs.cmdCode,
-              flowCode: forecastInputs.flowCode,
-              freq: forecastInputs.freq,
-              period
-            }
-          });
-
-          if (error) {
-            console.error(`❌ Error for ${country.name}:`, error);
-            allCountryData.push({
-              countryName: country.name,
-              countryCode: country.code,
-              data: []
-            });
-            continue;
-          }
-
-          const apiData = data?.data || [];
-          console.log(`✓ Data received for ${country.name}:`, apiData.length, 'records');
+          // Fetch data for each period chunk
+          const allChunkData: any[] = [];
           
-          if (apiData.length === 0) {
+          for (let chunkIndex = 0; chunkIndex < periodChunks.length; chunkIndex++) {
+            const chunkPeriod = periodChunks[chunkIndex];
+            
+            console.log(`  Chunk ${chunkIndex + 1}/${periodChunks.length} for ${country.name}`);
+            
+            // Add delay between chunks (2 seconds)
+            if (chunkIndex > 0) {
+              console.log(`  Waiting 2 seconds before next chunk...`);
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+            
+            const { data, error } = await supabase.functions.invoke('comtrade-data', {
+              body: {
+                reporterCode: country.code,
+                partnerCode: forecastInputs.partnerCode,
+                cmdCode: forecastInputs.cmdCode,
+                flowCode: forecastInputs.flowCode,
+                freq: forecastInputs.freq,
+                period: chunkPeriod
+              }
+            });
+
+            if (error) {
+              console.error(`  ❌ Error in chunk ${chunkIndex + 1} for ${country.name}:`, error);
+              continue;
+            }
+
+            const chunkApiData = data?.data || [];
+            console.log(`  ✓ Chunk ${chunkIndex + 1} received ${chunkApiData.length} records`);
+            allChunkData.push(...chunkApiData);
+          }
+          
+          console.log(`✓ Total data received for ${country.name}:`, allChunkData.length, 'records');
+          
+          if (allChunkData.length === 0) {
             console.warn(`⚠️ No data found for ${country.name}`);
           }
           
           // Sort data by period before processing
-          const sortedApiData = apiData.sort((a: any, b: any) => {
+          const sortedApiData = allChunkData.sort((a: any, b: any) => {
             const periodA = String(a.period);
             const periodB = String(b.period);
             return periodA.localeCompare(periodB);
