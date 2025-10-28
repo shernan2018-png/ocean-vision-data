@@ -671,10 +671,48 @@ const Explorer = () => {
 
       const baseSeriesName = `${reporter.text} → ${partner.text}`;
       
+      // 🔍 Debug: Ver qué datos hay disponibles
+      console.log('🔍 Diagnóstico de datos disponibles:');
+      console.log('📊 chartDataToUse tiene', chartDataToUse.length, 'periodos');
+      if (chartDataToUse.length > 0) {
+        console.log('📋 Primer registro:', chartDataToUse[0]);
+        console.log('🔑 Claves disponibles:', Object.keys(chartDataToUse[0]));
+        console.log('🎯 Buscando clave:', baseSeriesName);
+      }
+      
       // Extract base series (dependent variable) - X1
-      const baseSeries = chartDataToUse
+      // Intentar primero con el formato completo (Reporter → Partner)
+      let baseSeries = chartDataToUse
         .map(item => item[baseSeriesName])
         .filter(value => value !== undefined && value !== null && value > 0);
+      
+      // Si no encuentra datos con el formato "Reporter → Partner", buscar solo con el nombre del reporter
+      if (baseSeries.length === 0) {
+        console.warn('⚠️ No se encontraron datos con el formato "Reporter → Partner"');
+        console.log('🔄 Intentando buscar con solo el nombre del reporter:', reporter.text);
+        
+        // Buscar cualquier clave que contenga el nombre del reporter
+        const availableKeys = chartDataToUse.length > 0 ? Object.keys(chartDataToUse[0]) : [];
+        const matchingKey = availableKeys.find(key => 
+          key !== 'period' && 
+          (key === reporter.text || key.includes(reporter.text))
+        );
+        
+        if (matchingKey) {
+          console.log('✅ Encontrada clave alternativa:', matchingKey);
+          baseSeries = chartDataToUse
+            .map(item => item[matchingKey])
+            .filter(value => value !== undefined && value !== null && value > 0);
+        } else {
+          console.error('❌ No se encontró ninguna clave que coincida con el reporter');
+          console.log('📋 Claves disponibles:', availableKeys);
+        }
+      }
+      
+      console.log('📊 Serie base extraída:', baseSeries.length, 'valores');
+      if (baseSeries.length > 0) {
+        console.log('📈 Primeros 5 valores:', baseSeries.slice(0, 5));
+      }
 
       if (baseSeries.length < 3) {
         console.warn(`⚠️ Datos insuficientes: solo ${baseSeries.length} periodos encontrados, se requieren al menos 3`);
