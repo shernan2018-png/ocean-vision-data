@@ -563,11 +563,19 @@ const Explorer = () => {
       
       console.log(`Divided into ${periodChunks.length} chunks:`, periodChunks.map(c => c.split(',').length + ' periods'));
 
+      console.log('🚀 STARTING TO FETCH DATA FOR COUNTRIES');
+      console.log('🚀 Total countries to fetch:', countriesToPlot.length);
+      console.log('🚀 Country list:', JSON.stringify(countriesToPlot, null, 2));
+
       // Fetch data for each country SEQUENTIALLY with delay to avoid rate limiting
       const allCountryData = [];
       
       for (let i = 0; i < countriesToPlot.length; i++) {
         const country = countriesToPlot[i];
+        
+        console.log(`\n🔄 === PROCESSING COUNTRY ${i + 1}/${countriesToPlot.length} ===`);
+        console.log(`🔄 Country name: ${country.name}`);
+        console.log(`🔄 Country code: ${country.code}`);
         
         try {
           console.log(`[${i + 1}/${countriesToPlot.length}] Fetching data for ${country.name} (${country.code})`);
