@@ -716,9 +716,41 @@ const Explorer = () => {
         horizon: 6
       };
 
-      console.log('📊 JSON Body construido:', JSON.stringify(requestBody, null, 2));
-      console.log('Base series (X1):', baseSeries);
-      console.log('Variables exógenas:', Object.keys(inputs).filter(k => k !== 'X1'));
+      // ========== LOGS DETALLADOS PARA VERIFICAR SERIES ==========
+      console.log('\n🔍 ========== VERIFICACIÓN DE SERIES ==========');
+      console.log('📊 Total de series a enviar:', Object.keys(inputs).length);
+      console.log('\n');
+      
+      // Mostrar X1 (serie base)
+      console.log('📈 X1 (Serie base: País Reportero → País Socio)');
+      console.log(`   País: ${reporter.text} → ${partner.text}`);
+      console.log(`   Número de valores: ${inputs.X1.length}`);
+      console.log(`   Valores:`, inputs.X1);
+      console.log(`   Primer valor: ${inputs.X1[0]}`);
+      console.log(`   Último valor: ${inputs.X1[inputs.X1.length - 1]}`);
+      console.log('\n');
+      
+      // Mostrar X2-X5 (variables exógenas)
+      const exogenousKeys = Object.keys(inputs).filter(k => k !== 'X1').sort();
+      if (exogenousKeys.length > 0) {
+        console.log('📊 Variables Exógenas:');
+        exogenousKeys.forEach(key => {
+          const country = forecastInputs.additionalCountries[parseInt(key.substring(1)) - 2];
+          const countryName = reporters.find(r => String(r.id) === String(country))?.text || 'Desconocido';
+          console.log(`\n   ${key} (${reporter.text} → ${countryName})`);
+          console.log(`   Número de valores: ${inputs[key].length}`);
+          console.log(`   Valores:`, inputs[key]);
+          console.log(`   Primer valor: ${inputs[key][0]}`);
+          console.log(`   Último valor: ${inputs[key][inputs[key].length - 1]}`);
+        });
+      } else {
+        console.log('⚠️ No hay variables exógenas (X2-X5)');
+      }
+      
+      console.log('\n📦 JSON completo que se enviará:');
+      console.log(JSON.stringify(requestBody, null, 2));
+      console.log('🔍 ========================================\n');
+      // ========== FIN DE LOGS DETALLADOS ==========
 
       // Send POST request to forecast endpoint
       console.log('🚀 Enviando solicitud POST a http://localhost:8080/forecast');
