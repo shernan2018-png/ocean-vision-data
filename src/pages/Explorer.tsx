@@ -743,11 +743,16 @@ const Explorer = () => {
             </div>
 
             <div className="col-span-full">
-              <Label className="mb-2 block">Variables adicionales (hasta 4 países exógenos)</Label>
+              <Label className="mb-2 block">Variables exógenas (Países con flujo al país socio)</Label>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                {[0, 1, 2, 3].map((index) => (
+                {[
+                  { index: 0, label: 'Primer país' },
+                  { index: 1, label: 'Segundo país' },
+                  { index: 2, label: 'Tercer país' },
+                  { index: 3, label: 'Cuarto país' }
+                ].map(({ index, label }) => (
                   <div key={index}>
-                    <Label className="text-xs text-muted-foreground mb-1">Variable {index + 1}</Label>
+                    <Label className="text-xs text-muted-foreground mb-1">{label}</Label>
                     <Select 
                       value={forecastInputs.additionalCountries[index]} 
                       onValueChange={(value) => handleAdditionalCountryChange(index, value)}
