@@ -1396,7 +1396,6 @@ const Explorer = () => {
                         <th className="text-left p-2 font-semibold">País</th>
                         <th className="text-right p-2 font-semibold">Períodos con Datos</th>
                         <th className="text-left p-2 font-semibold">Estado</th>
-                        <th className="text-left p-2 font-semibold">Períodos</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1417,9 +1416,6 @@ const Explorer = () => {
                                 ) : (
                                   <span className="text-destructive text-xs">✗ Sin datos</span>
                                 )}
-                              </td>
-                              <td className="p-2 text-xs text-muted-foreground">
-                                {periods.length > 0 ? periods.join(', ') : 'No hay datos para este período'}
                               </td>
                             </tr>
                           );
