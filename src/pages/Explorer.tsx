@@ -433,6 +433,9 @@ const Explorer = () => {
     setLoadingPriceChart(true);
     try {
       // Get all countries to plot (reporter + additional countries that are not 'none')
+      console.log('📋 Reporter code:', forecastInputs.reporterCode);
+      console.log('📋 Additional countries RAW:', forecastInputs.additionalCountries);
+      
       const allCountryCodes = [
         forecastInputs.reporterCode,
         ...forecastInputs.additionalCountries.filter(code => code !== 'none' && code !== '')
