@@ -989,6 +989,87 @@ const Explorer = () => {
           </div>
         </Card>
 
+        {/* Search Results Section */}
+        {chartData.length > 0 && (
+          <>
+            <Card className="p-6 mb-8">
+              <h3 className="text-lg font-semibold mb-4">Data Preview</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2 font-semibold">Year</th>
+                      <th className="text-left p-2 font-semibold">Month</th>
+                      <th className="text-left p-2 font-semibold">Commodity</th>
+                      <th className="text-left p-2 px-4 font-semibold">Reporting Country</th>
+                      <th className="text-left p-2 px-6 font-semibold">Flow</th>
+                      <th className="text-left p-2 px-4 font-semibold">Partner Country</th>
+                      <th className="text-right p-2 font-semibold">Value (USD)</th>
+                      <th className="text-right p-2 font-semibold">Quantity</th>
+                      <th className="text-left p-2 font-semibold">Unit</th>
+                      <th className="text-right p-2 font-semibold">Precio Unitario (USD)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {chartData.slice(0, 10).map((row: any, idx: number) => {
+                      const unitPrice = row.quantity > 0 ? (row.value / row.quantity).toFixed(2) : 'N/A';
+                      return (
+                        <tr key={idx} className="border-b hover:bg-muted/50">
+                          <td className="p-2">{row.year}</td>
+                          <td className="p-2">{row.month || '-'}</td>
+                          <td className="p-2 text-sm">{row.commodity}</td>
+                          <td className="p-2 px-4">{row.reporter}</td>
+                          <td className="p-2 px-6">{row.flow}</td>
+                          <td className="p-2 px-4">{row.partner}</td>
+                          <td className="p-2 text-right font-mono">{row.value.toLocaleString()}</td>
+                          <td className="p-2 text-right font-mono">{row.quantity.toLocaleString()}</td>
+                          <td className="p-2 text-left">{row.qtyUnit}</td>
+                          <td className="p-2 text-right font-mono">{unitPrice}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {chartData.length > 10 && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Showing 10 of {chartData.length} records
+                  </p>
+                )}
+              </div>
+            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Trade Value Over Time</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="period" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Card>
+
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Quantity Over Time</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="period" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="quantity" fill="hsl(var(--secondary))" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Card>
+            </div>
+          </>
+        )}
+
         {/* Forecast Section */}
         <Card className="p-6 mb-8 shadow-ocean border-2 border-primary/20">
           <div className="flex items-center justify-between mb-4">
@@ -1411,86 +1492,6 @@ const Explorer = () => {
             </div>
           )}
         </Card>
-
-        {chartData.length > 0 && (
-          <>
-            <Card className="p-6 mb-8">
-              <h3 className="text-lg font-semibold mb-4">Data Preview</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2 font-semibold">Year</th>
-                      <th className="text-left p-2 font-semibold">Month</th>
-                      <th className="text-left p-2 font-semibold">Commodity</th>
-                      <th className="text-left p-2 px-4 font-semibold">Reporting Country</th>
-                      <th className="text-left p-2 px-6 font-semibold">Flow</th>
-                      <th className="text-left p-2 px-4 font-semibold">Partner Country</th>
-                      <th className="text-right p-2 font-semibold">Value (USD)</th>
-                      <th className="text-right p-2 font-semibold">Quantity</th>
-                      <th className="text-left p-2 font-semibold">Unit</th>
-                      <th className="text-right p-2 font-semibold">Precio Unitario (USD)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {chartData.slice(0, 10).map((row: any, idx: number) => {
-                      const unitPrice = row.quantity > 0 ? (row.value / row.quantity).toFixed(2) : 'N/A';
-                      return (
-                        <tr key={idx} className="border-b hover:bg-muted/50">
-                          <td className="p-2">{row.year}</td>
-                          <td className="p-2">{row.month || '-'}</td>
-                          <td className="p-2 text-sm">{row.commodity}</td>
-                          <td className="p-2 px-4">{row.reporter}</td>
-                          <td className="p-2 px-6">{row.flow}</td>
-                          <td className="p-2 px-4">{row.partner}</td>
-                          <td className="p-2 text-right font-mono">{row.value.toLocaleString()}</td>
-                          <td className="p-2 text-right font-mono">{row.quantity.toLocaleString()}</td>
-                          <td className="p-2 text-left">{row.qtyUnit}</td>
-                          <td className="p-2 text-right font-mono">{unitPrice}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                {chartData.length > 10 && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Showing 10 of {chartData.length} records
-                  </p>
-                )}
-              </div>
-            </Card>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Trade Value Over Time</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="period" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </Card>
-
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Quantity Over Time</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="period" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="quantity" fill="hsl(var(--secondary))" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </Card>
-            </div>
-          </>
-        )}
 
       </div>
     </div>
