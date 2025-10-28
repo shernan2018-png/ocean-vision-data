@@ -99,6 +99,7 @@ const Explorer = () => {
   const [forecastInputs, setForecastInputs] = useState({
     reporterCode: '36', // Australia
     partnerCode: '156', // China
+    cmdCode: '030631', // Shrimp
     baseVariable: 'reporter', // reporter or partner
     flowCode: '1', // Export
     freq: 'M', // Monthly
@@ -482,7 +483,7 @@ const Explorer = () => {
             body: {
               reporterCode: country.code,
               partnerCode: forecastInputs.partnerCode,
-              cmdCode: filters.cmdCode, // Use the same commodity as the filters
+              cmdCode: forecastInputs.cmdCode,
               flowCode: forecastInputs.flowCode,
               freq: forecastInputs.freq,
               period
@@ -854,6 +855,25 @@ const Explorer = () => {
                   {partners.map((country) => (
                     <SelectItem key={country.id} value={country.id}>
                       {country.text}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="forecast-hsCode">Código HS</Label>
+              <Select 
+                value={forecastInputs.cmdCode} 
+                onValueChange={(value) => setForecastInputs({ ...forecastInputs, cmdCode: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar código HS" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50 max-h-[300px]">
+                  {seafoodHSCodes.map((code) => (
+                    <SelectItem key={code.id} value={code.id}>
+                      {code.text}
                     </SelectItem>
                   ))}
                 </SelectContent>
