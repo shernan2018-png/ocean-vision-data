@@ -557,69 +557,57 @@ const Explorer = () => {
       console.log('Base series (X1):', baseSeries);
       console.log('Variables exógenas:', Object.keys(inputs).filter(k => k !== 'X1'));
 
-      // Simple forecasting using linear regression with exogenous variables
-      const forecastPeriods = 6; // Forecast next 6 periods
-      const values = baseSeries;
+      // Send POST request to forecast endpoint
+      console.log('🚀 Enviando solicitud POST a http://localhost:8080/forecast');
       
-      // Calculate linear trend
-      const n = values.length;
-      const xMean = (n - 1) / 2;
-      const yMean = values.reduce((a, b) => a + b, 0) / n;
-      
-      let numerator = 0;
-      let denominator = 0;
-      
-      for (let i = 0; i < n; i++) {
-        numerator += (i - xMean) * (values[i] - yMean);
-        denominator += Math.pow(i - xMean, 2);
-      }
-      
-      const slope = denominator !== 0 ? numerator / denominator : 0;
-      const intercept = yMean - slope * xMean;
+      const response = await fetch('http://localhost:8080/forecast', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody)
+      });
 
-      // Adjust forecast based on exogenous variables
-      let exoAdjustment = 0;
-      const exoCount = Object.keys(inputs).length - 1; // Exclude X1
-      if (exoCount > 0) {
-        Object.keys(inputs).forEach(key => {
-          if (key !== 'X1') {
-            const exoValues = inputs[key];
-            if (exoValues.length > 0) {
-              const lastExoValue = exoValues[exoValues.length - 1];
-              const exoMean = exoValues.reduce((a: number, b: number) => a + b, 0) / exoValues.length;
-              // Each exogenous variable contributes 10% influence
-              exoAdjustment += (lastExoValue - exoMean) * 0.1;
-            }
-          }
-        });
+      if (!response.ok) {
+        throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
       }
 
-      // Generate forecast values
+      const forecastResult = await response.json();
+      console.log('📈 Respuesta del servidor:', forecastResult);
+
+      // Process the forecast response
+      // Assuming the server returns { forecast: [...], horizon: [...] } or similar structure
+      const forecastValues = forecastResult.forecast || [];
+      const horizonValues = forecastResult.horizon || [];
+
+      if (!Array.isArray(forecastValues) || forecastValues.length === 0) {
+        throw new Error('La respuesta del servidor no contiene datos de pronóstico válidos');
+      }
+
+      // Generate forecast data with periods
       const lastPeriod = priceChartData[priceChartData.length - 1].period;
       const forecastArray: { period: string; forecast: number; lower: number; upper: number }[] = [];
       
-      for (let i = 1; i <= forecastPeriods; i++) {
-        const trendValue = intercept + slope * (n + i - 1);
-        const forecastValue = Math.max(0, trendValue + exoAdjustment);
-        
+      forecastValues.forEach((forecastValue: number, index: number) => {
         // Calculate confidence intervals (simple ±15%)
         const lower = Math.max(0, forecastValue * 0.85);
         const upper = forecastValue * 1.15;
         
-        const nextPeriod = getNextPeriod(lastPeriod, i);
+        const nextPeriod = getNextPeriod(lastPeriod, index + 1);
         forecastArray.push({
           period: nextPeriod,
-          forecast: forecastValue,
+          forecast: Math.max(0, forecastValue),
           lower,
           upper
         });
-      }
+      });
 
       setPriceForecastData(forecastArray);
 
+      const exoCount = Object.keys(inputs).length - 1; // Exclude X1
       toast({
         title: "Pronóstico generado",
-        description: `Se generó un pronóstico para los próximos ${forecastPeriods} periodos usando ${exoCount} variable(s) exógena(s)`,
+        description: `Se generó un pronóstico para los próximos ${forecastArray.length} periodos usando ${exoCount} variable(s) exógena(s)`,
       });
 
     } catch (error) {
