@@ -731,18 +731,22 @@ const Explorer = () => {
         X1: baseSeries // Serie de precios del país reportero → socio
       };
       
-      // Collect exogenous variables X2-X5 from additional countries
+      // Collect exogenous variables X2-X5 from additional countries (unit prices)
       forecastInputs.additionalCountries.forEach((countryCode, index) => {
         if (countryCode && countryCode !== 'none' && countryCode !== '') {
           const country = reporters.find(r => String(r.id) === String(countryCode));
           if (country) {
-            const seriesName = `${reporter.text} → ${country.text}`;
+            // Use the country name directly (unit prices are stored by country name in chartDataToUse)
+            const seriesName = country.text;
             const values = chartDataToUse
               .map(item => item[seriesName])
               .filter(value => value !== undefined && value !== null && value > 0);
             
             if (values.length > 0) {
-              inputs[`X${index + 2}`] = values; // X2, X3, X4, X5
+              inputs[`X${index + 2}`] = values; // X2, X3, X4, X5 = unit prices
+              console.log(`✅ Agregada variable X${index + 2} (${seriesName} → ${partner.text}): ${values.length} valores`);
+            } else {
+              console.warn(`⚠️ No se encontraron datos para X${index + 2} (${seriesName})`);
             }
           }
         }
@@ -768,14 +772,14 @@ const Explorer = () => {
       console.log(`   Último valor: ${inputs.X1[inputs.X1.length - 1]}`);
       console.log('\n');
       
-      // Mostrar X2-X5 (variables exógenas)
+      // Mostrar X2-X5 (variables exógenas - precios unitarios)
       const exogenousKeys = Object.keys(inputs).filter(k => k !== 'X1').sort();
       if (exogenousKeys.length > 0) {
-        console.log('📊 Variables Exógenas:');
+        console.log('📊 Variables Exógenas (Precios Unitarios):');
         exogenousKeys.forEach(key => {
           const country = forecastInputs.additionalCountries[parseInt(key.substring(1)) - 2];
           const countryName = reporters.find(r => String(r.id) === String(country))?.text || 'Desconocido';
-          console.log(`\n   ${key} (${reporter.text} → ${countryName})`);
+          console.log(`\n   ${key} (${countryName} → ${partner.text}) [Precio Unitario]`);
           console.log(`   Número de valores: ${inputs[key].length}`);
           console.log(`   Valores:`, inputs[key]);
           console.log(`   Primer valor: ${inputs[key][0]}`);
