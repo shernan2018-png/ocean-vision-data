@@ -433,15 +433,19 @@ const Explorer = () => {
     setLoadingPriceChart(true);
     try {
       // Get all countries to plot (reporter + additional countries that are not 'none')
-      const countriesToPlot = [
-        { code: forecastInputs.reporterCode, name: 'País reportero' },
-        ...forecastInputs.additionalCountries
-          .map((code, index) => ({ 
-            code, 
-            name: ['Primer país', 'Segundo país', 'Tercer país', 'Cuarto país'][index] 
-          }))
-          .filter(country => country.code !== 'none' && country.code !== '')
+      const allCountryCodes = [
+        forecastInputs.reporterCode,
+        ...forecastInputs.additionalCountries.filter(code => code !== 'none' && code !== '')
       ];
+
+      // Get country names from the reporters catalog
+      const countriesToPlot = allCountryCodes.map(code => {
+        const country = reporters.find(r => r.id === code);
+        return {
+          code: code,
+          name: country ? country.text : code
+        };
+      });
 
       // Format period based on frequency
       let period: string;
@@ -534,9 +538,10 @@ const Explorer = () => {
 
       setPriceChartData(chartData);
       
+      const countriesWithData = allCountryData.filter(d => d.data.length > 0);
       toast({
         title: 'Gráfica generada',
-        description: `Se cargaron datos de ${allCountryData.filter(d => d.data.length > 0).length} países`,
+        description: `Se cargaron datos de ${countriesWithData.length} país(es)`,
       });
     } catch (error) {
       console.error('Error plotting prices:', error);
