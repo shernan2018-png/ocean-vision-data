@@ -575,15 +575,19 @@ const Explorer = () => {
       const periodMap = new Map<string, any>();
       
       allCountryData.forEach(countryData => {
-        console.log(`Processing ${countryData.countryName}: ${countryData.data.length} records`);
+        console.log(`📊 Processing ${countryData.countryName}: ${countryData.data.length} records`);
         if (countryData.data.length > 0) {
+          console.log(`  Sample data for ${countryData.countryName}:`, countryData.data.slice(0, 2));
           countryData.data.forEach((item: any) => {
             if (!periodMap.has(item.period)) {
               periodMap.set(item.period, { period: item.period });
             }
             const periodData = periodMap.get(item.period);
+            console.log(`    Adding ${countryData.countryName} to period ${item.period}: unitPrice = ${item.unitPrice}`);
             periodData[countryData.countryName] = item.unitPrice;
           });
+        } else {
+          console.log(`  ⚠️ No data for ${countryData.countryName}`);
         }
       });
 
@@ -591,7 +595,9 @@ const Explorer = () => {
         a.period.localeCompare(b.period)
       );
 
-      console.log('Final chart data:', chartData);
+      console.log('📈 Final chart data (first 3 periods):', chartData.slice(0, 3));
+      console.log('📈 Chart data keys:', chartData.length > 0 ? Object.keys(chartData[0]) : 'No data');
+      console.log('📈 All country names in chart:', chartData.length > 0 ? Object.keys(chartData[0]).filter(k => k !== 'period') : 'No data');
 
       setPriceChartData(chartData);
       
