@@ -100,6 +100,12 @@ const Explorer = () => {
     reporterCode: '36', // Australia
     partnerCode: '156', // China
     baseVariable: 'reporter', // reporter or partner
+    flowCode: '1', // Export
+    freq: 'M', // Monthly
+    periodStart: new Date(2022, 0), // January 2022
+    periodEnd: new Date(2022, 11), // December 2022
+    yearStart: 2022,
+    yearEnd: 2022,
     additionalCountries: ['none', 'none', 'none', 'none'], // Up to 4 additional countries
     horizon: '6',
   });
@@ -740,6 +746,176 @@ const Explorer = () => {
                 disabled
                 className="bg-muted"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="forecast-flow">Flujo</Label>
+              <Select 
+                value={forecastInputs.flowCode} 
+                onValueChange={(value) => setForecastInputs({ ...forecastInputs, flowCode: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="1">Export</SelectItem>
+                  <SelectItem value="2">Import</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="forecast-freq">Frecuencia</Label>
+              <Select 
+                value={forecastInputs.freq} 
+                onValueChange={(value) => setForecastInputs({ ...forecastInputs, freq: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="A">Annual</SelectItem>
+                  <SelectItem value="M">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="col-span-full">
+              {forecastInputs.freq === 'A' ? (
+                // Annual frequency: Year selectors
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="forecast-yearStart">Inicio Periodo</Label>
+                    <Input
+                      id="forecast-yearStart"
+                      type="number"
+                      min="1900"
+                      max="2100"
+                      value={forecastInputs.yearStart}
+                      onChange={(e) => setForecastInputs({ ...forecastInputs, yearStart: parseInt(e.target.value) || 2022 })}
+                      placeholder="2022"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="forecast-yearEnd">Fin Periodo</Label>
+                    <Input
+                      id="forecast-yearEnd"
+                      type="number"
+                      min="1900"
+                      max="2100"
+                      value={forecastInputs.yearEnd}
+                      onChange={(e) => setForecastInputs({ ...forecastInputs, yearEnd: parseInt(e.target.value) || 2022 })}
+                      placeholder="2022"
+                    />
+                  </div>
+                </div>
+              ) : (
+                // Monthly frequency: Month + Year selectors
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Inicio Periodo</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Select
+                        value={forecastInputs.periodStart.getMonth().toString()}
+                        onValueChange={(value) => {
+                          const newDate = new Date(forecastInputs.periodStart);
+                          newDate.setMonth(parseInt(value));
+                          setForecastInputs({ ...forecastInputs, periodStart: newDate });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          <SelectItem value="0">Enero</SelectItem>
+                          <SelectItem value="1">Febrero</SelectItem>
+                          <SelectItem value="2">Marzo</SelectItem>
+                          <SelectItem value="3">Abril</SelectItem>
+                          <SelectItem value="4">Mayo</SelectItem>
+                          <SelectItem value="5">Junio</SelectItem>
+                          <SelectItem value="6">Julio</SelectItem>
+                          <SelectItem value="7">Agosto</SelectItem>
+                          <SelectItem value="8">Septiembre</SelectItem>
+                          <SelectItem value="9">Octubre</SelectItem>
+                          <SelectItem value="10">Noviembre</SelectItem>
+                          <SelectItem value="11">Diciembre</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={forecastInputs.periodStart.getFullYear().toString()}
+                        onValueChange={(value) => {
+                          const newDate = new Date(forecastInputs.periodStart);
+                          newDate.setFullYear(parseInt(value));
+                          setForecastInputs({ ...forecastInputs, periodStart: newDate });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          {Array.from({ length: 31 }, (_, i) => 2000 + i).map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Fin Periodo</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Select
+                        value={forecastInputs.periodEnd.getMonth().toString()}
+                        onValueChange={(value) => {
+                          const newDate = new Date(forecastInputs.periodEnd);
+                          newDate.setMonth(parseInt(value));
+                          setForecastInputs({ ...forecastInputs, periodEnd: newDate });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          <SelectItem value="0">Enero</SelectItem>
+                          <SelectItem value="1">Febrero</SelectItem>
+                          <SelectItem value="2">Marzo</SelectItem>
+                          <SelectItem value="3">Abril</SelectItem>
+                          <SelectItem value="4">Mayo</SelectItem>
+                          <SelectItem value="5">Junio</SelectItem>
+                          <SelectItem value="6">Julio</SelectItem>
+                          <SelectItem value="7">Agosto</SelectItem>
+                          <SelectItem value="8">Septiembre</SelectItem>
+                          <SelectItem value="9">Octubre</SelectItem>
+                          <SelectItem value="10">Noviembre</SelectItem>
+                          <SelectItem value="11">Diciembre</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={forecastInputs.periodEnd.getFullYear().toString()}
+                        onValueChange={(value) => {
+                          const newDate = new Date(forecastInputs.periodEnd);
+                          newDate.setFullYear(parseInt(value));
+                          setForecastInputs({ ...forecastInputs, periodEnd: newDate });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          {Array.from({ length: 31 }, (_, i) => 2000 + i).map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="col-span-full">
