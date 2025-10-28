@@ -97,6 +97,15 @@ const Explorer = () => {
     yearEnd: 2022, // For annual frequency
   });
 
+  const [forecastInputs, setForecastInputs] = useState({
+    X1: '2.3, 2.5, 2.7, 2.8',
+    X2: '5.2, 5.5, 5.7',
+    X3: '3.1, 3.4, 3.5, 3.7',
+    X4: '7.8, 7.9, 8.0, 8.1, 8.3',
+    X5: '1.5, 1.6, 1.7, 1.8',
+    horizon: '6',
+  });
+
   useEffect(() => {
     const fetchCatalogs = async () => {
       try {
@@ -323,18 +332,36 @@ const Explorer = () => {
     }
   };
 
+  const parseInputArray = (input: string): number[] => {
+    return input
+      .split(',')
+      .map(val => parseFloat(val.trim()))
+      .filter(val => !isNaN(val));
+  };
+
   const handleGenerateForecast = async () => {
     setLoadingForecast(true);
     try {
+      // Parsear los inputs
+      const X1 = parseInputArray(forecastInputs.X1);
+      const X2 = parseInputArray(forecastInputs.X2);
+      const X3 = parseInputArray(forecastInputs.X3);
+      const X4 = parseInputArray(forecastInputs.X4);
+      const X5 = parseInputArray(forecastInputs.X5);
+      const horizon = parseInt(forecastInputs.horizon);
+
+      // Validar que los inputs no estén vacíos
+      if (X1.length === 0 || X2.length === 0 || X3.length === 0 || X4.length === 0 || X5.length === 0) {
+        throw new Error('Todos los campos X deben contener al menos un valor válido');
+      }
+
+      if (isNaN(horizon) || horizon <= 0) {
+        throw new Error('Horizon debe ser un número positivo');
+      }
+
       const requestBody = {
-        inputs: {
-          X1: [2.3, 2.5, 2.7, 2.8],
-          X2: [5.2, 5.5, 5.7],
-          X3: [3.1, 3.4, 3.5, 3.7],
-          X4: [7.8, 7.9, 8.0, 8.1, 8.3],
-          X5: [1.5, 1.6, 1.7, 1.8]
-        },
-        horizon: 6
+        inputs: { X1, X2, X3, X4, X5 },
+        horizon
       };
 
       const response = await fetch('http://localhost:8080/forecast', {
@@ -352,7 +379,14 @@ const Explorer = () => {
       const data = await response.json();
       
       if (data.forecast && Array.isArray(data.forecast)) {
-        const months = ['Mes 1', 'Mes 2', 'Mes 3', 'Mes 4', 'Mes 5', 'Mes 6'];
+        // Usar los meses del campo horizon si están disponibles, si no generar automáticamente
+        let months: string[];
+        if (data.horizon && Array.isArray(data.horizon)) {
+          months = data.horizon;
+        } else {
+          months = Array.from({ length: data.forecast.length }, (_, i) => `Mes ${i + 1}`);
+        }
+
         const forecastChartData = data.forecast.map((value: number, index: number) => ({
           month: months[index] || `Mes ${index + 1}`,
           forecast: value,
@@ -716,28 +750,101 @@ const Explorer = () => {
         )}
 
         <Card className="p-6 mt-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Pronóstico de Datos</h3>
-            <Button onClick={handleGenerateForecast} disabled={loadingForecast} className="gap-2">
-              <TrendingUp className="h-4 w-4" />
-              {loadingForecast ? 'Generando...' : 'Generar Pronóstico'}
-            </Button>
+          <h3 className="text-lg font-semibold mb-6">Pronóstico de Datos</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div>
+              <Label htmlFor="X1">X1 (valores separados por comas)</Label>
+              <Input
+                id="X1"
+                value={forecastInputs.X1}
+                onChange={(e) => setForecastInputs({ ...forecastInputs, X1: e.target.value })}
+                placeholder="2.3, 2.5, 2.7, 2.8"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="X2">X2 (valores separados por comas)</Label>
+              <Input
+                id="X2"
+                value={forecastInputs.X2}
+                onChange={(e) => setForecastInputs({ ...forecastInputs, X2: e.target.value })}
+                placeholder="5.2, 5.5, 5.7"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="X3">X3 (valores separados por comas)</Label>
+              <Input
+                id="X3"
+                value={forecastInputs.X3}
+                onChange={(e) => setForecastInputs({ ...forecastInputs, X3: e.target.value })}
+                placeholder="3.1, 3.4, 3.5, 3.7"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="X4">X4 (valores separados por comas)</Label>
+              <Input
+                id="X4"
+                value={forecastInputs.X4}
+                onChange={(e) => setForecastInputs({ ...forecastInputs, X4: e.target.value })}
+                placeholder="7.8, 7.9, 8.0, 8.1, 8.3"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="X5">X5 (valores separados por comas)</Label>
+              <Input
+                id="X5"
+                value={forecastInputs.X5}
+                onChange={(e) => setForecastInputs({ ...forecastInputs, X5: e.target.value })}
+                placeholder="1.5, 1.6, 1.7, 1.8"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="horizon">Horizon (meses a pronosticar)</Label>
+              <Input
+                id="horizon"
+                type="number"
+                min="1"
+                value={forecastInputs.horizon}
+                onChange={(e) => setForecastInputs({ ...forecastInputs, horizon: e.target.value })}
+                placeholder="6"
+              />
+            </div>
           </div>
+
+          <Button onClick={handleGenerateForecast} disabled={loadingForecast} className="gap-2 mb-6">
+            <TrendingUp className="h-4 w-4" />
+            {loadingForecast ? 'Generando...' : 'Generar Pronóstico'}
+          </Button>
           
           {forecastData.length > 0 && (
             <>
-              <div className="mb-4">
-                <ResponsiveContainer width="100%" height={300}>
+              <div className="mb-2">
+                <ResponsiveContainer width="100%" height={400}>
                   <LineChart data={forecastData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="forecast" stroke="hsl(var(--primary))" strokeWidth={2} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="forecast" 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={3}
+                      name="Pronóstico"
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
+              
+              <p className="text-sm text-muted-foreground italic mb-4 text-center">
+                Pronóstico generado con modelo NARX
+              </p>
               
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
@@ -751,7 +858,7 @@ const Explorer = () => {
                     {forecastData.map((row: any, idx: number) => (
                       <tr key={idx} className="border-b hover:bg-muted/50">
                         <td className="p-2">{row.month}</td>
-                        <td className="p-2 text-right font-mono">{row.forecast.toFixed(2)}</td>
+                        <td className="p-2 text-right font-mono">{row.forecast.toFixed(4)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -762,7 +869,7 @@ const Explorer = () => {
           
           {forecastData.length === 0 && (
             <p className="text-muted-foreground text-center py-8">
-              Haz clic en "Generar Pronóstico" para conectarte al servidor local y obtener predicciones
+              Ingresa los valores en los campos y haz clic en "Generar Pronóstico" para conectarte al servidor local
             </p>
           )}
         </Card>
