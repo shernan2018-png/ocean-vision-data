@@ -114,6 +114,13 @@ const Explorer = () => {
   const [loadingForecast, setLoadingForecast] = useState(false);
   const [priceChartData, setPriceChartData] = useState<any[]>([]);
   const [loadingPriceChart, setLoadingPriceChart] = useState(false);
+  const [priceForecastData, setPriceForecastData] = useState<any[]>([]);
+  const [selectedReporter, setSelectedReporter] = useState<Country | null>(null);
+  const [selectedPartner, setSelectedPartner] = useState<Country | null>(null);
+  const [selectedFirstCountry, setSelectedFirstCountry] = useState<Country | null>(null);
+  const [selectedSecondCountry, setSelectedSecondCountry] = useState<Country | null>(null);
+  const [selectedThirdCountry, setSelectedThirdCountry] = useState<Country | null>(null);
+  const [selectedFourthCountry, setSelectedFourthCountry] = useState<Country | null>(null);
 
   useEffect(() => {
     const fetchCatalogs = async () => {
@@ -472,6 +479,158 @@ const Explorer = () => {
     newAdditionalCountries[index] = value;
     console.log(`🔄 New additional countries array:`, newAdditionalCountries);
     setForecastInputs({ ...forecastInputs, additionalCountries: newAdditionalCountries });
+  };
+
+  const handleGeneratePriceForecast = async () => {
+    if (!priceChartData || priceChartData.length === 0) {
+      toast({
+        title: "Error",
+        description: "Primero debes graficar los precios antes de generar un pronóstico",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoadingForecast(true);
+
+    try {
+      // Get the base series name (Reporter → Partner)
+      const reporter = reporters.find(r => String(r.id) === String(forecastInputs.reporterCode));
+      const partner = partners.find(p => String(p.id) === String(forecastInputs.partnerCode));
+      
+      if (!reporter || !partner) {
+        toast({
+          title: "Error",
+          description: "No se pudo encontrar el país reportero o socio",
+          variant: "destructive",
+        });
+        setLoadingForecast(false);
+        return;
+      }
+
+      const baseSeriesName = `${reporter.text} → ${partner.text}`;
+      
+      // Extract base series (dependent variable)
+      const baseSeries = priceChartData
+        .map(item => ({
+          period: item.period,
+          value: item[baseSeriesName] || 0
+        }))
+        .filter(item => item.value > 0);
+
+      if (baseSeries.length < 3) {
+        toast({
+          title: "Error",
+          description: "Se necesitan al menos 3 periodos con datos para generar un pronóstico",
+          variant: "destructive",
+        });
+        setLoadingForecast(false);
+        return;
+      }
+
+      // Collect exogenous variables
+      const exogenousVariables: { name: string; values: number[] }[] = [];
+      
+      forecastInputs.additionalCountries.forEach((countryCode, index) => {
+        if (countryCode && countryCode !== 'none' && countryCode !== '') {
+          const country = reporters.find(r => String(r.id) === String(countryCode));
+          if (country) {
+            const seriesName = `${reporter.text} → ${country.text}`;
+            const values = priceChartData.map(item => item[seriesName] || 0);
+            if (values.some(v => v > 0)) {
+              exogenousVariables.push({ name: country.text, values });
+            }
+          }
+        }
+      });
+
+      console.log('Base series:', baseSeries);
+      console.log('Exogenous variables:', exogenousVariables);
+
+      // Simple forecasting using linear regression with exogenous variables
+      const forecastPeriods = 6; // Forecast next 6 periods
+      const values = baseSeries.map(item => item.value);
+      
+      // Calculate linear trend
+      const n = values.length;
+      const xMean = (n - 1) / 2;
+      const yMean = values.reduce((a, b) => a + b, 0) / n;
+      
+      let numerator = 0;
+      let denominator = 0;
+      
+      for (let i = 0; i < n; i++) {
+        numerator += (i - xMean) * (values[i] - yMean);
+        denominator += Math.pow(i - xMean, 2);
+      }
+      
+      const slope = denominator !== 0 ? numerator / denominator : 0;
+      const intercept = yMean - slope * xMean;
+
+      // Adjust forecast based on exogenous variables
+      let exoAdjustment = 0;
+      if (exogenousVariables.length > 0) {
+        exogenousVariables.forEach(exo => {
+          const exoValues = exo.values.filter(v => v > 0);
+          if (exoValues.length > 0) {
+            const lastExoValue = exoValues[exoValues.length - 1];
+            const exoMean = exoValues.reduce((a, b) => a + b, 0) / exoValues.length;
+            // Each exogenous variable contributes 10% influence
+            exoAdjustment += (lastExoValue - exoMean) * 0.1;
+          }
+        });
+      }
+
+      // Generate forecast values
+      const lastPeriod = baseSeries[baseSeries.length - 1].period;
+      const forecastArray: { period: string; forecast: number; lower: number; upper: number }[] = [];
+      
+      for (let i = 1; i <= forecastPeriods; i++) {
+        const trendValue = intercept + slope * (n + i - 1);
+        const forecastValue = Math.max(0, trendValue + exoAdjustment);
+        
+        // Calculate confidence intervals (simple ±15%)
+        const lower = Math.max(0, forecastValue * 0.85);
+        const upper = forecastValue * 1.15;
+        
+        const nextPeriod = getNextPeriod(lastPeriod, i);
+        forecastArray.push({
+          period: nextPeriod,
+          forecast: forecastValue,
+          lower,
+          upper
+        });
+      }
+
+      setPriceForecastData(forecastArray);
+
+      toast({
+        title: "Pronóstico generado",
+        description: `Se generó un pronóstico para los próximos ${forecastPeriods} periodos usando ${exogenousVariables.length} variable(s) exógena(s)`,
+      });
+
+    } catch (error) {
+      console.error('Error generating forecast:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar el pronóstico",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingForecast(false);
+    }
+  };
+
+  // Helper function to get next period
+  const getNextPeriod = (currentPeriod: string, offset: number): string => {
+    const year = parseInt(currentPeriod.substring(0, 4));
+    const month = parseInt(currentPeriod.substring(4, 6));
+    
+    const totalMonths = (year * 12 + month - 1) + offset;
+    const newYear = Math.floor(totalMonths / 12);
+    const newMonth = (totalMonths % 12) + 1;
+    
+    return `${newYear}${newMonth.toString().padStart(2, '0')}`;
   };
 
   const handlePlotPrices = async () => {
@@ -1368,15 +1527,23 @@ const Explorer = () => {
 
           </div>
 
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-4">
             <Button 
               onClick={handlePlotPrices} 
-              disabled={loadingPriceChart} 
+              disabled={loadingPriceChart || loadingForecast} 
               className="gap-2"
               variant="outline"
             >
               <TrendingUp className="h-4 w-4" />
               {loadingPriceChart ? 'Cargando gráfica...' : 'Graficar Precios'}
+            </Button>
+            
+            <Button 
+              onClick={handleGeneratePriceForecast} 
+              disabled={loadingForecast || loadingPriceChart || priceChartData.length === 0} 
+              className="gap-2"
+            >
+              {loadingForecast ? 'Generando pronóstico...' : 'Generar Pronóstico 📈'}
             </Button>
           </div>
 
@@ -1460,10 +1627,87 @@ const Explorer = () => {
             </div>
           )}
 
-          {forecastData.length > 0 && (
-            <div className="mt-6 space-y-6">
+          {priceForecastData.length > 0 && (
+            <div className="mt-6 space-y-6 border-t pt-6">
               <div>
-                <h3 className="text-lg font-semibold mb-4">Gráfico de Pronóstico</h3>
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  📈 Pronóstico de Precios Unitarios
+                </h3>
+                <ResponsiveContainer width="100%" height={350}>
+                  <LineChart data={[...priceChartData.slice(-12), ...priceForecastData.map(f => ({ period: f.period, forecast: f.forecast }))]}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="period" />
+                    <YAxis label={{ value: 'Precio Unitario (USD/kg)', angle: -90, position: 'insideLeft' }} />
+                    <Tooltip />
+                    <Legend />
+                    {/* Historical data line */}
+                    {priceChartData.length > 0 && Object.keys(priceChartData[0])
+                      .filter(key => key !== 'period' && key.includes('→'))
+                      .slice(0, 1)
+                      .map((seriesName) => (
+                        <Line 
+                          key={seriesName}
+                          type="monotone" 
+                          dataKey={seriesName} 
+                          stroke="hsl(var(--primary))" 
+                          strokeWidth={2}
+                          name="Histórico"
+                          connectNulls={false}
+                          dot={{ r: 4 }}
+                        />
+                      ))}
+                    {/* Forecast line */}
+                    <Line 
+                      type="monotone" 
+                      dataKey="forecast" 
+                      stroke="#f97316" 
+                      strokeWidth={3}
+                      strokeDasharray="5 5"
+                      name="Pronóstico"
+                      dot={{ r: 6, fill: '#f97316' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+                <p className="text-xs text-muted-foreground mt-2">
+                  📊 El pronóstico se basa en la tendencia histórica y las variables exógenas seleccionadas
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Valores Pronosticados</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="text-left p-3 font-semibold">Periodo</th>
+                        <th className="text-right p-3 font-semibold">Pronóstico</th>
+                        <th className="text-right p-3 font-semibold">Límite Inferior</th>
+                        <th className="text-right p-3 font-semibold">Límite Superior</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {priceForecastData.map((row, index) => (
+                        <tr key={index} className="border-b hover:bg-muted/50">
+                          <td className="p-3 font-medium">{row.period}</td>
+                          <td className="p-3 text-right font-mono text-primary font-bold">${row.forecast.toFixed(2)}</td>
+                          <td className="p-3 text-right font-mono text-muted-foreground">${row.lower.toFixed(2)}</td>
+                          <td className="p-3 text-right font-mono text-muted-foreground">${row.upper.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  💡 Los límites de confianza representan una estimación del rango probable del precio (±15%)
+                </p>
+              </div>
+            </div>
+          )}
+
+          {forecastData.length > 0 && (
+            <div className="mt-6 space-y-6 border-t pt-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Gráfico de Pronóstico NARX</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={forecastData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -1486,7 +1730,7 @@ const Explorer = () => {
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold mb-4">Valores Pronosticados</h3>
+                <h3 className="text-lg font-semibold mb-4">Valores Pronosticados NARX</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
