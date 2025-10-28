@@ -495,9 +495,10 @@ const Explorer = () => {
         try {
           console.log(`Fetching data for ${country.name} (${country.code})`);
           
-          // Add delay between requests (2 seconds) to avoid rate limiting
+          // Add delay between requests (3 seconds) to avoid rate limiting
           if (i > 0) {
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            console.log(`Waiting 3 seconds before next request...`);
+            await new Promise(resolve => setTimeout(resolve, 3000));
           }
           
           const { data, error } = await supabase.functions.invoke('comtrade-data', {
