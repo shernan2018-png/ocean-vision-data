@@ -111,6 +111,8 @@ const Explorer = () => {
   });
   const [forecastData, setForecastData] = useState<any[]>([]);
   const [loadingForecast, setLoadingForecast] = useState(false);
+  const [priceChartData, setPriceChartData] = useState<any[]>([]);
+  const [loadingPriceChart, setLoadingPriceChart] = useState(false);
 
   useEffect(() => {
     const fetchCatalogs = async () => {
@@ -424,6 +426,127 @@ const Explorer = () => {
     const newAdditionalCountries = [...forecastInputs.additionalCountries];
     newAdditionalCountries[index] = value;
     setForecastInputs({ ...forecastInputs, additionalCountries: newAdditionalCountries });
+  };
+
+  const handlePlotPrices = async () => {
+    setLoadingPriceChart(true);
+    try {
+      // Get all countries to plot (reporter + additional countries that are not 'none')
+      const countriesToPlot = [
+        { code: forecastInputs.reporterCode, name: 'País reportero' },
+        ...forecastInputs.additionalCountries
+          .map((code, index) => ({ 
+            code, 
+            name: ['Primer país', 'Segundo país', 'Tercer país', 'Cuarto país'][index] 
+          }))
+          .filter(country => country.code !== 'none' && country.code !== '')
+      ];
+
+      // Format period based on frequency
+      let period: string;
+      
+      if (forecastInputs.freq === 'A') {
+        if (forecastInputs.yearStart === forecastInputs.yearEnd) {
+          period = forecastInputs.yearStart.toString();
+        } else {
+          const years: string[] = [];
+          for (let year = forecastInputs.yearStart; year <= forecastInputs.yearEnd; year++) {
+            years.push(year.toString());
+          }
+          period = years.join(',');
+        }
+      } else {
+        const startYear = forecastInputs.periodStart.getFullYear();
+        const startMonth = forecastInputs.periodStart.getMonth();
+        const endYear = forecastInputs.periodEnd.getFullYear();
+        const endMonth = forecastInputs.periodEnd.getMonth();
+        
+        const periods: string[] = [];
+        let currentDate = new Date(startYear, startMonth);
+        const endDate = new Date(endYear, endMonth);
+        
+        while (currentDate <= endDate) {
+          const yearStr = currentDate.getFullYear().toString();
+          const monthStr = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+          periods.push(`${yearStr}-${monthStr}`);
+          currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+        
+        period = periods.join(',');
+      }
+
+      // Fetch data for each country
+      const dataPromises = countriesToPlot.map(async (country) => {
+        try {
+          const { data, error } = await supabase.functions.invoke('comtrade-data', {
+            body: {
+              reporterCode: country.code,
+              partnerCode: forecastInputs.partnerCode,
+              cmdCode: filters.cmdCode, // Use the same commodity as the filters
+              flowCode: forecastInputs.flowCode,
+              freq: forecastInputs.freq,
+              period
+            }
+          });
+
+          if (error) throw error;
+
+          const apiData = data?.data || [];
+          return {
+            countryName: country.name,
+            countryCode: country.code,
+            data: apiData.map((item: any) => ({
+              period: item.period,
+              unitPrice: item.netWgt > 0 ? (item.primaryValue / item.netWgt) : 0
+            }))
+          };
+        } catch (error) {
+          console.error(`Error fetching data for ${country.name}:`, error);
+          return {
+            countryName: country.name,
+            countryCode: country.code,
+            data: []
+          };
+        }
+      });
+
+      const allCountryData = await Promise.all(dataPromises);
+
+      // Combine all data by period
+      const periodMap = new Map<string, any>();
+      
+      allCountryData.forEach(countryData => {
+        if (countryData.data.length > 0) {
+          countryData.data.forEach((item: any) => {
+            if (!periodMap.has(item.period)) {
+              periodMap.set(item.period, { period: item.period });
+            }
+            const periodData = periodMap.get(item.period);
+            periodData[countryData.countryName] = item.unitPrice;
+          });
+        }
+      });
+
+      const chartData = Array.from(periodMap.values()).sort((a, b) => 
+        a.period.localeCompare(b.period)
+      );
+
+      setPriceChartData(chartData);
+      
+      toast({
+        title: 'Gráfica generada',
+        description: `Se cargaron datos de ${allCountryData.filter(d => d.data.length > 0).length} países`,
+      });
+    } catch (error) {
+      console.error('Error plotting prices:', error);
+      toast({
+        title: 'Error',
+        description: 'Error al generar la gráfica de precios',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingPriceChart(false);
+    }
   };
 
 
@@ -968,14 +1091,57 @@ const Explorer = () => {
             </div>
           </div>
 
-          <Button 
-            onClick={handleGenerateForecast} 
-            disabled={loadingForecast} 
-            className="gap-2"
-          >
-            <TrendingUp className="h-4 w-4" />
-            {loadingForecast ? 'Generando pronóstico...' : 'Generar Pronóstico'}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={handlePlotPrices} 
+              disabled={loadingPriceChart} 
+              className="gap-2"
+              variant="outline"
+            >
+              <TrendingUp className="h-4 w-4" />
+              {loadingPriceChart ? 'Cargando gráfica...' : 'Graficar'}
+            </Button>
+            
+            <Button 
+              onClick={handleGenerateForecast} 
+              disabled={loadingForecast} 
+              className="gap-2"
+            >
+              <TrendingUp className="h-4 w-4" />
+              {loadingForecast ? 'Generando pronóstico...' : 'Generar Pronóstico'}
+            </Button>
+          </div>
+
+          {priceChartData.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-4">Precios Unitarios por País</h3>
+              <ResponsiveContainer width="100%" height={400}>
+                <LineChart data={priceChartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="period" />
+                  <YAxis label={{ value: 'Precio Unitario (USD/kg)', angle: -90, position: 'insideLeft' }} />
+                  <Tooltip />
+                  <Legend />
+                  {priceChartData.length > 0 && Object.keys(priceChartData[0])
+                    .filter(key => key !== 'period')
+                    .map((countryName, index) => {
+                      const colors = ['hsl(var(--primary))', '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c'];
+                      return (
+                        <Line 
+                          key={countryName}
+                          type="monotone" 
+                          dataKey={countryName} 
+                          stroke={colors[index % colors.length]} 
+                          strokeWidth={2}
+                          name={countryName}
+                          connectNulls
+                        />
+                      );
+                    })}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
 
           {forecastData.length > 0 && (
             <div className="mt-6 space-y-6">
