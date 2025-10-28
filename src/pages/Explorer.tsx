@@ -497,12 +497,15 @@ const Explorer = () => {
       ];
 
       console.log('📋 All countries to plot:', allCountryCodes);
+      console.log('📋 Number of countries to fetch:', allCountryCodes.length);
 
       // Get country names from the reporters catalog
       const countriesToPlot = allCountryCodes.map(code => {
         const country = reporters.find(r => String(r.id) === String(code));
         if (!country) {
           console.log(`❌ Could not find country with code: ${code}`);
+        } else {
+          console.log(`✅ Found country: ${country.text} (${code})`);
         }
         return {
           code: code,
@@ -510,7 +513,7 @@ const Explorer = () => {
         };
       });
 
-      console.log('📋 Final countries to plot:', countriesToPlot);
+      console.log('📋 Final countries to plot (TOTAL:', countriesToPlot.length, '):', countriesToPlot);
       console.log('🌍 Países a graficar:', countriesToPlot.map(c => `${c.name} (${c.code})`).join(', '));
 
       // Format period based on frequency
@@ -1384,6 +1387,7 @@ const Explorer = () => {
                       <tr className="border-b">
                         <th className="text-left p-2 font-semibold">País</th>
                         <th className="text-right p-2 font-semibold">Períodos con Datos</th>
+                        <th className="text-left p-2 font-semibold">Estado</th>
                         <th className="text-left p-2 font-semibold">Períodos</th>
                       </tr>
                     </thead>
@@ -1394,17 +1398,30 @@ const Explorer = () => {
                           const periods = priceChartData
                             .filter((d: any) => d[countryName] !== undefined && d[countryName] !== null && d[countryName] > 0)
                             .map((d: any) => d.period);
+                          const hasData = periods.length > 0;
                           return (
-                            <tr key={countryName} className="border-b hover:bg-muted/50">
+                            <tr key={countryName} className={`border-b hover:bg-muted/50 ${!hasData ? 'bg-destructive/10' : ''}`}>
                               <td className="p-2 font-medium">{countryName}</td>
                               <td className="text-right p-2">{periods.length}</td>
-                              <td className="p-2 text-xs text-muted-foreground">{periods.join(', ')}</td>
+                              <td className="p-2">
+                                {hasData ? (
+                                  <span className="text-green-600 dark:text-green-400 text-xs">✓ Datos disponibles</span>
+                                ) : (
+                                  <span className="text-destructive text-xs">✗ Sin datos</span>
+                                )}
+                              </td>
+                              <td className="p-2 text-xs text-muted-foreground">
+                                {periods.length > 0 ? periods.join(', ') : 'No hay datos para este período'}
+                              </td>
                             </tr>
                           );
                         })}
                     </tbody>
                   </table>
                 </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  💡 Si un país no aparece en la tabla, significa que no tiene datos comerciales registrados para el período seleccionado.
+                </p>
               </div>
               
               <div>
