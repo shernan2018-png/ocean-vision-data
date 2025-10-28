@@ -617,6 +617,26 @@ const Explorer = () => {
         console.log('📈 Chart data keys (all columns):', Object.keys(chartData[0]));
         console.log('📈 Country columns in chart:', Object.keys(chartData[0]).filter(k => k !== 'period'));
         console.log('📈 Sample data from first period:', chartData[0]);
+        
+        // Show which periods each country has data for
+        const countryPeriods: Record<string, string[]> = {};
+        chartData.forEach((periodData: any) => {
+          Object.keys(periodData).forEach(key => {
+            if (key !== 'period') {
+              if (!countryPeriods[key]) {
+                countryPeriods[key] = [];
+              }
+              if (periodData[key] !== undefined && periodData[key] !== null) {
+                countryPeriods[key].push(periodData.period);
+              }
+            }
+          });
+        });
+        
+        console.log('📊 Períodos por país:');
+        Object.keys(countryPeriods).forEach(country => {
+          console.log(`  ${country}: ${countryPeriods[country].join(', ')} (${countryPeriods[country].length} períodos)`);
+        });
       }
 
       setPriceChartData(chartData);
