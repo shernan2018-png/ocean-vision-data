@@ -100,7 +100,7 @@ const Explorer = () => {
     reporterCode: '36', // Australia
     partnerCode: '156', // China
     baseVariable: 'reporter', // reporter or partner
-    additionalCountries: ['', '', '', ''], // Up to 4 additional countries
+    additionalCountries: ['none', 'none', 'none', 'none'], // Up to 4 additional countries
     horizon: '6',
   });
   const [forecastData, setForecastData] = useState<any[]>([]);
@@ -365,7 +365,7 @@ const Explorer = () => {
       inputs.X1 = [2.3, 2.5, 2.7, 2.8]; // Placeholder for base variable
       
       // Add additional countries as X2-X5
-      const validAdditionalCountries = forecastInputs.additionalCountries.filter(c => c !== '');
+      const validAdditionalCountries = forecastInputs.additionalCountries.filter(c => c !== 'none' && c !== '');
       validAdditionalCountries.forEach((country, index) => {
         inputs[`X${index + 2}`] = [1.0, 1.5, 2.0]; // Placeholder data
       });
@@ -766,7 +766,7 @@ const Explorer = () => {
                         <SelectValue placeholder="Opcional" />
                       </SelectTrigger>
                       <SelectContent className="bg-background z-50">
-                        <SelectItem value="">Ninguno</SelectItem>
+                        <SelectItem value="none">Ninguno</SelectItem>
                         {reporters.map((country) => (
                           <SelectItem key={country.id} value={country.id}>
                             {country.text}
