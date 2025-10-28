@@ -482,18 +482,178 @@ const Explorer = () => {
   };
 
   const handleGeneratePriceForecast = async () => {
-    if (!priceChartData || priceChartData.length === 0) {
-      toast({
-        title: "Error",
-        description: "Primero debes graficar los precios antes de generar un pronóstico",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoadingForecast(true);
 
     try {
+      let chartDataToUse = priceChartData;
+      
+      // Si no hay datos graficados, obtenerlos primero
+      if (!chartDataToUse || chartDataToUse.length === 0) {
+        console.log('No hay datos graficados, obteniendo datos primero...');
+        
+        // Get all countries to plot (reporter + additional countries)
+        const reporter = reporters.find(r => String(r.id) === String(forecastInputs.reporterCode));
+        const partner = partners.find(p => String(p.id) === String(forecastInputs.partnerCode));
+        
+        if (!reporter || !partner) {
+          toast({
+            title: "Error",
+            description: "Por favor selecciona el país reportero y el país socio",
+            variant: "destructive",
+          });
+          setLoadingForecast(false);
+          return;
+        }
+
+        const filteredAdditional = forecastInputs.additionalCountries.filter(code => {
+          return code !== 'none' && code !== '' && code !== null && code !== undefined;
+        });
+        
+        const allCountryCodes = [
+          forecastInputs.reporterCode,
+          ...filteredAdditional
+        ];
+
+        const countriesToPlot = allCountryCodes.map(code => {
+          const country = reporters.find(r => String(r.id) === String(code));
+          return {
+            code: code,
+            name: country ? country.text : `Unknown (${code})`
+          };
+        });
+
+        // Format period
+        let period: string;
+        if (forecastInputs.freq === 'A') {
+          if (forecastInputs.yearStart === forecastInputs.yearEnd) {
+            period = forecastInputs.yearStart.toString();
+          } else {
+            const years: string[] = [];
+            for (let year = forecastInputs.yearStart; year <= forecastInputs.yearEnd; year++) {
+              years.push(year.toString());
+            }
+            period = years.join(',');
+          }
+        } else {
+          const startYear = forecastInputs.periodStart.getFullYear();
+          const startMonth = forecastInputs.periodStart.getMonth();
+          const endYear = forecastInputs.periodEnd.getFullYear();
+          const endMonth = forecastInputs.periodEnd.getMonth();
+          
+          const periods: string[] = [];
+          let currentDate = new Date(startYear, startMonth);
+          const endDate = new Date(endYear, endMonth);
+          
+          while (currentDate <= endDate) {
+            const yearStr = currentDate.getFullYear().toString();
+            const monthStr = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+            periods.push(`${yearStr}-${monthStr}`);
+            currentDate.setMonth(currentDate.getMonth() + 1);
+          }
+          
+          period = periods.join(',');
+        }
+
+        const periodList = period.split(',');
+        const periodChunks: string[] = [];
+        
+        for (let i = 0; i < periodList.length; i += 12) {
+          const chunk = periodList.slice(i, i + 12);
+          periodChunks.push(chunk.join(','));
+        }
+
+        // Fetch data for each country
+        const allCountryData = [];
+        
+        for (let i = 0; i < countriesToPlot.length; i++) {
+          const country = countriesToPlot[i];
+          
+          try {
+            if (i > 0) {
+              await new Promise(resolve => setTimeout(resolve, 4000));
+            }
+            
+            const allChunkData: any[] = [];
+            
+            for (let chunkIndex = 0; chunkIndex < periodChunks.length; chunkIndex++) {
+              const chunkPeriod = periodChunks[chunkIndex];
+              
+              if (chunkIndex > 0) {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+              }
+              
+              const { data, error } = await supabase.functions.invoke('comtrade-data', {
+                body: {
+                  reporterCode: country.code,
+                  partnerCode: forecastInputs.partnerCode,
+                  cmdCode: forecastInputs.cmdCode,
+                  flowCode: forecastInputs.flowCode,
+                  freq: forecastInputs.freq,
+                  period: chunkPeriod
+                }
+              });
+
+              if (error) {
+                console.error(`Error fetching data for ${country.name}:`, error);
+                continue;
+              }
+
+              const chunkApiData = data?.data || [];
+              allChunkData.push(...chunkApiData);
+            }
+            
+            const sortedApiData = allChunkData.sort((a: any, b: any) => {
+              return String(a.period).localeCompare(String(b.period));
+            });
+            
+            allCountryData.push({
+              countryName: country.name,
+              countryCode: country.code,
+              data: sortedApiData.map((item: any) => ({
+                period: item.period,
+                unitPrice: item.netWgt > 0 ? (item.primaryValue / item.netWgt) : 0
+              }))
+            });
+          } catch (error) {
+            console.error(`Error fetching data for ${country.name}:`, error);
+            allCountryData.push({
+              countryName: country.name,
+              countryCode: country.code,
+              data: []
+            });
+          }
+        }
+
+        // Combine all data by period
+        const periodMap = new Map<string, any>();
+        
+        allCountryData.forEach(countryData => {
+          if (countryData.data.length > 0) {
+            countryData.data.forEach((item: any) => {
+              if (!periodMap.has(item.period)) {
+                periodMap.set(item.period, { period: item.period });
+              }
+              const periodData = periodMap.get(item.period);
+              periodData[countryData.countryName] = item.unitPrice;
+            });
+          }
+        });
+
+        chartDataToUse = Array.from(periodMap.values()).sort((a, b) => 
+          a.period.localeCompare(b.period)
+        );
+
+        if (chartDataToUse.length === 0) {
+          toast({
+            title: "Error",
+            description: "No se encontraron datos para generar el pronóstico",
+            variant: "destructive",
+          });
+          setLoadingForecast(false);
+          return;
+        }
+      }
+
       // Get the base series name (Reporter → Partner)
       const reporter = reporters.find(r => String(r.id) === String(forecastInputs.reporterCode));
       const partner = partners.find(p => String(p.id) === String(forecastInputs.partnerCode));
@@ -511,7 +671,7 @@ const Explorer = () => {
       const baseSeriesName = `${reporter.text} → ${partner.text}`;
       
       // Extract base series (dependent variable) - X1
-      const baseSeries = priceChartData
+      const baseSeries = chartDataToUse
         .map(item => item[baseSeriesName])
         .filter(value => value !== undefined && value !== null && value > 0);
 
@@ -536,7 +696,7 @@ const Explorer = () => {
           const country = reporters.find(r => String(r.id) === String(countryCode));
           if (country) {
             const seriesName = `${reporter.text} → ${country.text}`;
-            const values = priceChartData
+            const values = chartDataToUse
               .map(item => item[seriesName])
               .filter(value => value !== undefined && value !== null && value > 0);
             
@@ -1541,7 +1701,7 @@ const Explorer = () => {
             
             <Button 
               onClick={handleGeneratePriceForecast} 
-              disabled={loadingForecast || loadingPriceChart || priceChartData.length === 0} 
+              disabled={loadingForecast || loadingPriceChart} 
               className="gap-2"
             >
               {loadingForecast ? 'Generando pronóstico...' : 'Generar Pronóstico 📈'}
