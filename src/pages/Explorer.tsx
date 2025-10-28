@@ -486,10 +486,19 @@ const Explorer = () => {
 
       console.log('Period:', period);
 
-      // Fetch data for each country
-      const dataPromises = countriesToPlot.map(async (country) => {
+      // Fetch data for each country SEQUENTIALLY with delay to avoid rate limiting
+      const allCountryData = [];
+      
+      for (let i = 0; i < countriesToPlot.length; i++) {
+        const country = countriesToPlot[i];
+        
         try {
           console.log(`Fetching data for ${country.name} (${country.code})`);
+          
+          // Add delay between requests (2 seconds) to avoid rate limiting
+          if (i > 0) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
           
           const { data, error } = await supabase.functions.invoke('comtrade-data', {
             body: {
@@ -504,31 +513,35 @@ const Explorer = () => {
 
           if (error) {
             console.error(`Error for ${country.name}:`, error);
-            throw error;
+            allCountryData.push({
+              countryName: country.name,
+              countryCode: country.code,
+              data: []
+            });
+            continue;
           }
 
           const apiData = data?.data || [];
           console.log(`Data received for ${country.name}:`, apiData.length, 'records');
           
-          return {
+          allCountryData.push({
             countryName: country.name,
             countryCode: country.code,
             data: apiData.map((item: any) => ({
               period: item.period,
               unitPrice: item.netWgt > 0 ? (item.primaryValue / item.netWgt) : 0
             }))
-          };
+          });
         } catch (error) {
           console.error(`Error fetching data for ${country.name}:`, error);
-          return {
+          allCountryData.push({
             countryName: country.name,
             countryCode: country.code,
             data: []
-          };
+          });
         }
-      });
+      }
 
-      const allCountryData = await Promise.all(dataPromises);
       console.log('All country data:', allCountryData);
 
       // Combine all data by period
