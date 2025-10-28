@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Download, Save, Search, FileSpreadsheet } from 'lucide-react';
+import { Download, Save, Search, FileSpreadsheet, TrendingUp } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,6 +26,8 @@ const Explorer = () => {
   const [reporters, setReporters] = useState<Country[]>([]);
   const [partners, setPartners] = useState<Country[]>([]);
   const [loadingCatalogs, setLoadingCatalogs] = useState(true);
+  const [forecastData, setForecastData] = useState<any[]>([]);
+  const [loadingForecast, setLoadingForecast] = useState(false);
   
   // Seafood and Crustaceans HS Codes
   const seafoodHSCodes = [
@@ -318,6 +320,61 @@ const Explorer = () => {
         description: 'Failed to save query',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleGenerateForecast = async () => {
+    setLoadingForecast(true);
+    try {
+      const requestBody = {
+        inputs: {
+          X1: [2.3, 2.5, 2.7, 2.8],
+          X2: [5.2, 5.5, 5.7],
+          X3: [3.1, 3.4, 3.5, 3.7],
+          X4: [7.8, 7.9, 8.0, 8.1, 8.3],
+          X5: [1.5, 1.6, 1.7, 1.8]
+        },
+        horizon: 6
+      };
+
+      const response = await fetch('http://localhost:8080/forecast', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error del servidor: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.forecast && Array.isArray(data.forecast)) {
+        const months = ['Mes 1', 'Mes 2', 'Mes 3', 'Mes 4', 'Mes 5', 'Mes 6'];
+        const forecastChartData = data.forecast.map((value: number, index: number) => ({
+          month: months[index] || `Mes ${index + 1}`,
+          forecast: value,
+        }));
+        
+        setForecastData(forecastChartData);
+        toast({
+          title: 'Pronóstico generado',
+          description: `Se generaron ${data.forecast.length} valores de pronóstico`,
+        });
+      } else {
+        throw new Error('Formato de respuesta inválido');
+      }
+    } catch (error) {
+      console.error('Error generando pronóstico:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'No se pudo conectar con el servidor local',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingForecast(false);
     }
   };
 
@@ -657,6 +714,58 @@ const Explorer = () => {
             </div>
           </>
         )}
+
+        <Card className="p-6 mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Pronóstico de Datos</h3>
+            <Button onClick={handleGenerateForecast} disabled={loadingForecast} className="gap-2">
+              <TrendingUp className="h-4 w-4" />
+              {loadingForecast ? 'Generando...' : 'Generar Pronóstico'}
+            </Button>
+          </div>
+          
+          {forecastData.length > 0 && (
+            <>
+              <div className="mb-4">
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={forecastData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="forecast" stroke="hsl(var(--primary))" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2 font-semibold">Periodo</th>
+                      <th className="text-right p-2 font-semibold">Valor Pronosticado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {forecastData.map((row: any, idx: number) => (
+                      <tr key={idx} className="border-b hover:bg-muted/50">
+                        <td className="p-2">{row.month}</td>
+                        <td className="p-2 text-right font-mono">{row.forecast.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+          
+          {forecastData.length === 0 && (
+            <p className="text-muted-foreground text-center py-8">
+              Haz clic en "Generar Pronóstico" para conectarte al servidor local y obtener predicciones
+            </p>
+          )}
+        </Card>
       </div>
     </div>
   );
