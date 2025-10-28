@@ -646,8 +646,9 @@ const Explorer = () => {
         if (chartDataToUse.length === 0) {
           toast({
             title: "Error",
-            description: "No se encontraron datos para generar el pronóstico",
+            description: "No se encontraron datos para generar el pronóstico. Verifica que haya datos disponibles para los países y periodos seleccionados.",
             variant: "destructive",
+            duration: 8000,
           });
           setLoadingForecast(false);
           return;
@@ -676,10 +677,12 @@ const Explorer = () => {
         .filter(value => value !== undefined && value !== null && value > 0);
 
       if (baseSeries.length < 3) {
+        console.warn(`⚠️ Datos insuficientes: solo ${baseSeries.length} periodos encontrados, se requieren al menos 3`);
         toast({
           title: "Error",
-          description: "Se necesitan al menos 3 periodos con datos para generar un pronóstico",
+          description: `Se necesitan al menos 3 periodos con datos para generar un pronóstico. Solo se encontraron ${baseSeries.length} periodo(s).`,
           variant: "destructive",
+          duration: 8000,
         });
         setLoadingForecast(false);
         return;
@@ -719,17 +722,28 @@ const Explorer = () => {
 
       // Send POST request to forecast endpoint
       console.log('🚀 Enviando solicitud POST a http://localhost:8080/forecast');
+      console.log('📦 Request body:', JSON.stringify(requestBody, null, 2));
       
-      const response = await fetch('http://localhost:8080/forecast', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody)
-      });
+      let response;
+      try {
+        response = await fetch('http://localhost:8080/forecast', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        });
+      } catch (fetchError) {
+        console.error('❌ Error de conexión al servidor de pronósticos:', fetchError);
+        throw new Error('No se pudo conectar al servidor de pronósticos en http://localhost:8080. Asegúrate de que el servidor MATLAB esté corriendo.');
+      }
+
+      console.log('📡 Response status:', response.status);
 
       if (!response.ok) {
-        throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('❌ Error del servidor:', response.status, errorText);
+        throw new Error(`Error del servidor de pronósticos (${response.status}): ${errorText || response.statusText}`);
       }
 
       const forecastResult = await response.json();
@@ -771,11 +785,22 @@ const Explorer = () => {
       });
 
     } catch (error) {
-      console.error('Error generating forecast:', error);
+      console.error('❌ Error completo al generar pronóstico:', error);
+      console.error('❌ Tipo de error:', error instanceof Error ? error.constructor.name : typeof error);
+      
+      let errorMessage = "No se pudo generar el pronóstico";
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        console.error('❌ Mensaje de error:', error.message);
+        console.error('❌ Stack trace:', error.stack);
+      }
+      
       toast({
-        title: "Error",
-        description: "No se pudo generar el pronóstico",
+        title: "Error al generar pronóstico",
+        description: errorMessage,
         variant: "destructive",
+        duration: 10000, // 10 segundos para que puedas leer el error
       });
     } finally {
       setLoadingForecast(false);
