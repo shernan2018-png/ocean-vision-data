@@ -606,6 +606,20 @@ const Explorer = () => {
       setPriceChartData(chartData);
       
       const countriesWithData = allCountryData.filter(d => d.data.length > 0);
+      
+      // Check for countries with limited data
+      const countriesWithLimitedData = allCountryData
+        .filter(d => d.data.length > 0 && d.data.length < 5)
+        .map(d => `${d.countryName} (${d.data.length} registro${d.data.length === 1 ? '' : 's'})`);
+      
+      if (countriesWithLimitedData.length > 0) {
+        toast({
+          title: 'Advertencia: Datos limitados',
+          description: `Los siguientes países tienen pocos datos: ${countriesWithLimitedData.join(', ')}. Las líneas pueden ser muy cortas en la gráfica.`,
+          duration: 8000,
+        });
+      }
+      
       toast({
         title: 'Gráfica generada',
         description: `Se cargaron datos de ${countriesWithData.length} país(es): ${countriesWithData.map(c => c.countryName).join(', ')}`,
@@ -1217,16 +1231,18 @@ const Explorer = () => {
                   {priceChartData.length > 0 && Object.keys(priceChartData[0])
                     .filter(key => key !== 'period')
                     .map((countryName, index) => {
-                      const colors = ['hsl(var(--primary))', '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c'];
+                      const colors = ['hsl(var(--primary))', '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#a855f7', '#f97316'];
                       return (
                         <Line 
                           key={countryName}
                           type="monotone" 
                           dataKey={countryName} 
                           stroke={colors[index % colors.length]} 
-                          strokeWidth={2}
+                          strokeWidth={3}
                           name={countryName}
                           connectNulls
+                          dot={{ r: 6, strokeWidth: 2 }}
+                          activeDot={{ r: 8 }}
                         />
                       );
                     })}
