@@ -823,32 +823,35 @@ const Explorer = () => {
       const forecastResult = await response.json();
       console.log('📈 Respuesta del servidor:', forecastResult);
 
-      // Process the forecast response
-      // Assuming the server returns { forecast: [...], horizon: [...] } or similar structure
-      const forecastValues = forecastResult.forecast || [];
-      const horizonValues = forecastResult.horizon || [];
-
-      if (!Array.isArray(forecastValues) || forecastValues.length === 0) {
-        throw new Error('La respuesta del servidor no contiene datos de pronóstico válidos');
+      // Verify that the server returns an array with period and value
+      if (!Array.isArray(forecastResult) || forecastResult.length === 0) {
+        throw new Error('No se recibieron resultados válidos del modelo.');
       }
 
-      // Generate forecast data with periods
-      const lastPeriod = priceChartData[priceChartData.length - 1].period;
-      const forecastArray: { period: string; forecast: number; lower: number; upper: number }[] = [];
-      
-      forecastValues.forEach((forecastValue: number, index: number) => {
-        // Calculate confidence intervals (simple ±15%)
-        const lower = Math.max(0, forecastValue * 0.85);
-        const upper = forecastValue * 1.15;
-        
-        const nextPeriod = getNextPeriod(lastPeriod, index + 1);
-        forecastArray.push({
-          period: nextPeriod,
-          forecast: Math.max(0, forecastValue),
-          lower,
-          upper
+      // Verify that each object has period and value
+      const isValidFormat = forecastResult.every(
+        item => item && typeof item === 'object' && 'period' in item && 'value' in item
+      );
+
+      if (!isValidFormat) {
+        throw new Error('No se recibieron resultados válidos del modelo.');
+      }
+
+      // Use the data directly from the server response
+      const forecastArray: { period: string; forecast: number; lower: number; upper: number }[] = 
+        forecastResult.map((item: { period: string; value: number }) => {
+          // Calculate confidence intervals (simple ±15%)
+          const forecastValue = Math.max(0, item.value);
+          const lower = Math.max(0, forecastValue * 0.85);
+          const upper = forecastValue * 1.15;
+          
+          return {
+            period: item.period,
+            forecast: forecastValue,
+            lower,
+            upper
+          };
         });
-      });
 
       setPriceForecastData(forecastArray);
 
