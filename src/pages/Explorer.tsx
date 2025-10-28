@@ -1219,18 +1219,6 @@ const Explorer = () => {
               </p>
             </div>
 
-            <div>
-              <Label htmlFor="horizon">Horizonte de predicción (meses)</Label>
-              <Input
-                id="horizon"
-                type="number"
-                min="1"
-                max="24"
-                placeholder="6"
-                value={forecastInputs.horizon}
-                onChange={(e) => setForecastInputs({ ...forecastInputs, horizon: e.target.value })}
-              />
-            </div>
           </div>
 
           <div className="flex gap-2">
@@ -1241,16 +1229,7 @@ const Explorer = () => {
               variant="outline"
             >
               <TrendingUp className="h-4 w-4" />
-              {loadingPriceChart ? 'Cargando gráfica...' : 'Graficar'}
-            </Button>
-            
-            <Button 
-              onClick={handleGenerateForecast} 
-              disabled={loadingForecast} 
-              className="gap-2"
-            >
-              <TrendingUp className="h-4 w-4" />
-              {loadingForecast ? 'Generando pronóstico...' : 'Generar Pronóstico'}
+              {loadingPriceChart ? 'Cargando gráfica...' : 'Graficar Precios'}
             </Button>
           </div>
 
