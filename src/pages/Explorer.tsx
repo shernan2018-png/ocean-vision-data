@@ -733,22 +733,13 @@ const Explorer = () => {
 
             <div>
               <Label htmlFor="base-variable">Variable base</Label>
-              <Select 
-                value={forecastInputs.baseVariable} 
-                onValueChange={(value) => setForecastInputs({ ...forecastInputs, baseVariable: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  <SelectItem value="reporter">
-                    Precio unitario (USD) - País reportero
-                  </SelectItem>
-                  <SelectItem value="partner">
-                    Precio unitario (USD) - País socio
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <Input
+                id="base-variable"
+                type="text"
+                value="Precio unitario (USD) - País reportero"
+                disabled
+                className="bg-muted"
+              />
             </div>
 
             <div className="col-span-full">
