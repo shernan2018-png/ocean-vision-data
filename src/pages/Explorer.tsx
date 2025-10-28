@@ -435,24 +435,38 @@ const Explorer = () => {
       // Get all countries to plot (reporter + additional countries that are not 'none')
       console.log('📋 Reporter code:', forecastInputs.reporterCode);
       console.log('📋 Additional countries RAW:', forecastInputs.additionalCountries);
+      console.log('📋 Additional countries types:', forecastInputs.additionalCountries.map(c => typeof c));
+      
+      const filteredAdditional = forecastInputs.additionalCountries.filter(code => {
+        const isValid = code !== 'none' && code !== '' && code !== null && code !== undefined;
+        console.log(`📋 Filtering ${code} (${typeof code}): ${isValid}`);
+        return isValid;
+      });
+      
+      console.log('📋 Filtered additional countries:', filteredAdditional);
       
       const allCountryCodes = [
         forecastInputs.reporterCode,
-        ...forecastInputs.additionalCountries.filter(code => code !== 'none' && code !== '')
+        ...filteredAdditional
       ];
 
-      console.log('Countries to plot:', allCountryCodes);
+      console.log('📋 All countries to plot:', allCountryCodes);
 
       // Get country names from the reporters catalog
       const countriesToPlot = allCountryCodes.map(code => {
-        const country = reporters.find(r => r.id === code);
+        console.log(`📋 Looking for country code: ${code} (${typeof code})`);
+        const country = reporters.find(r => {
+          console.log(`  Comparing with ${r.id} (${typeof r.id}): ${r.id} === ${code} = ${r.id === code}, ${String(r.id)} === ${String(code)} = ${String(r.id) === String(code)}`);
+          return String(r.id) === String(code);
+        });
+        console.log(`📋 Found country:`, country);
         return {
           code: code,
           name: country ? country.text : code
         };
       });
 
-      console.log('Countries with names:', countriesToPlot);
+      console.log('📋 Countries with names:', countriesToPlot);
       console.log('🌍 Países a graficar:', countriesToPlot.map(c => `${c.name} (${c.code})`).join(', '));
 
       // Format period based on frequency
