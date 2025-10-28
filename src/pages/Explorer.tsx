@@ -182,24 +182,58 @@ const Explorer = () => {
         period = periods.join(',');
       }
 
-      const { data, error } = await supabase.functions.invoke('comtrade-data', {
-        body: {
-          reporterCode: filters.reporterCode,
-          partnerCode: filters.partnerCode,
-          cmdCode: filters.cmdCode,
-          flowCode: filters.flowCode,
-          freq: filters.freq,
-          period
+      console.log('Total periods requested:', period.split(',').length);
+
+      // Split periods into chunks of 12 (Comtrade API limit)
+      const periodList = period.split(',');
+      const periodChunks: string[] = [];
+      
+      for (let i = 0; i < periodList.length; i += 12) {
+        const chunk = periodList.slice(i, i + 12);
+        periodChunks.push(chunk.join(','));
+      }
+      
+      console.log(`Divided into ${periodChunks.length} chunks`);
+
+      // Fetch data for each chunk
+      const allApiData: any[] = [];
+      
+      for (let chunkIndex = 0; chunkIndex < periodChunks.length; chunkIndex++) {
+        const chunkPeriod = periodChunks[chunkIndex];
+        
+        console.log(`Fetching chunk ${chunkIndex + 1}/${periodChunks.length}...`);
+        
+        // Add delay between chunks (2 seconds)
+        if (chunkIndex > 0) {
+          console.log(`Waiting 2 seconds before next chunk...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
-      });
 
-      if (error) throw error;
+        const { data, error } = await supabase.functions.invoke('comtrade-data', {
+          body: {
+            reporterCode: filters.reporterCode,
+            partnerCode: filters.partnerCode,
+            cmdCode: filters.cmdCode,
+            flowCode: filters.flowCode,
+            freq: filters.freq,
+            period: chunkPeriod
+          }
+        });
 
-      console.log('API Response:', data);
+        if (error) {
+          console.error(`Error in chunk ${chunkIndex + 1}:`, error);
+          throw error;
+        }
+
+        const chunkData = data?.data || [];
+        console.log(`Chunk ${chunkIndex + 1} received ${chunkData.length} records`);
+        allApiData.push(...chunkData);
+      }
+
+      console.log('Total API data received:', allApiData.length, 'records');
 
       // Transform data for chart - the API returns data in 'data' array
-      const apiData = data?.data || [];
-      const transformed = apiData.map((item: any) => {
+      const transformed = allApiData.map((item: any) => {
         const periodStr = String(item.period);
         const year = periodStr.substring(0, 4);
         const month = periodStr.length >= 6 ? periodStr.substring(4, 6) : '';
