@@ -1255,35 +1255,72 @@ const Explorer = () => {
           </div>
 
           {priceChartData.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-4">Precios Unitarios por País</h3>
-              <ResponsiveContainer width="100%" height={400}>
-                <LineChart data={priceChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="period" />
-                  <YAxis label={{ value: 'Precio Unitario (USD/kg)', angle: -90, position: 'insideLeft' }} />
-                  <Tooltip />
-                  <Legend />
-                  {priceChartData.length > 0 && Object.keys(priceChartData[0])
-                    .filter(key => key !== 'period')
-                    .map((countryName, index) => {
-                      const colors = ['hsl(var(--primary))', '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#a855f7', '#f97316'];
-                      return (
-                        <Line 
-                          key={countryName}
-                          type="monotone" 
-                          dataKey={countryName} 
-                          stroke={colors[index % colors.length]} 
-                          strokeWidth={3}
-                          name={countryName}
-                          connectNulls
-                          dot={{ r: 6, strokeWidth: 2 }}
-                          activeDot={{ r: 8 }}
-                        />
-                      );
-                    })}
-                </LineChart>
-              </ResponsiveContainer>
+            <div className="mt-6 space-y-6">
+              {/* Summary table showing data availability */}
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Resumen de Datos Disponibles</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-sm">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-2 font-semibold">País</th>
+                        <th className="text-right p-2 font-semibold">Períodos con Datos</th>
+                        <th className="text-left p-2 font-semibold">Períodos</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.keys(priceChartData[0])
+                        .filter(key => key !== 'period')
+                        .map((countryName) => {
+                          const periods = priceChartData
+                            .filter((d: any) => d[countryName] !== undefined && d[countryName] !== null && d[countryName] > 0)
+                            .map((d: any) => d.period);
+                          return (
+                            <tr key={countryName} className="border-b hover:bg-muted/50">
+                              <td className="p-2 font-medium">{countryName}</td>
+                              <td className="text-right p-2">{periods.length}</td>
+                              <td className="p-2 text-xs text-muted-foreground">{periods.join(', ')}</td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Precios Unitarios por País</h3>
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart data={priceChartData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="period" />
+                    <YAxis label={{ value: 'Precio Unitario (USD/kg)', angle: -90, position: 'insideLeft' }} />
+                    <Tooltip />
+                    <Legend />
+                    {priceChartData.length > 0 && Object.keys(priceChartData[0])
+                      .filter(key => key !== 'period')
+                      .map((countryName, index) => {
+                        const colors = ['hsl(var(--primary))', '#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#a855f7', '#f97316'];
+                        return (
+                          <Line 
+                            key={countryName}
+                            type="monotone" 
+                            dataKey={countryName} 
+                            stroke={colors[index % colors.length]} 
+                            strokeWidth={3}
+                            name={countryName}
+                            connectNulls={false}
+                            dot={{ r: 8, strokeWidth: 2, fill: colors[index % colors.length] }}
+                            activeDot={{ r: 10 }}
+                          />
+                        );
+                      })}
+                  </LineChart>
+                </ResponsiveContainer>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Nota: Los puntos individuales representan datos disponibles. Algunos países pueden tener datos limitados para ciertos períodos.
+                </p>
+              </div>
             </div>
           )}
 
