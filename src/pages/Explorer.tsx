@@ -424,8 +424,10 @@ const Explorer = () => {
   };
 
   const handleAdditionalCountryChange = (index: number, value: string) => {
+    console.log(`🔄 Changing country at index ${index} to value: ${value} (type: ${typeof value})`);
     const newAdditionalCountries = [...forecastInputs.additionalCountries];
     newAdditionalCountries[index] = value;
+    console.log(`🔄 New additional countries array:`, newAdditionalCountries);
     setForecastInputs({ ...forecastInputs, additionalCountries: newAdditionalCountries });
   };
 
@@ -433,13 +435,14 @@ const Explorer = () => {
     setLoadingPriceChart(true);
     try {
       // Get all countries to plot (reporter + additional countries that are not 'none')
-      console.log('📋 Reporter code:', forecastInputs.reporterCode);
+      console.log('📋 Reporter code:', forecastInputs.reporterCode, 'Type:', typeof forecastInputs.reporterCode);
       console.log('📋 Additional countries RAW:', forecastInputs.additionalCountries);
-      console.log('📋 Additional countries types:', forecastInputs.additionalCountries.map(c => typeof c));
+      console.log('📋 Reporters array sample (first 5):', reporters.slice(0, 5).map(r => ({ id: r.id, type: typeof r.id, text: r.text })));
+      console.log('📋 Looking for Mexico (484):', reporters.find(r => String(r.id) === '484'));
+      console.log('📋 Looking for Japan (392):', reporters.find(r => String(r.id) === '392'));
       
       const filteredAdditional = forecastInputs.additionalCountries.filter(code => {
         const isValid = code !== 'none' && code !== '' && code !== null && code !== undefined;
-        console.log(`📋 Filtering ${code} (${typeof code}): ${isValid}`);
         return isValid;
       });
       
@@ -454,19 +457,17 @@ const Explorer = () => {
 
       // Get country names from the reporters catalog
       const countriesToPlot = allCountryCodes.map(code => {
-        console.log(`📋 Looking for country code: ${code} (${typeof code})`);
-        const country = reporters.find(r => {
-          console.log(`  Comparing with ${r.id} (${typeof r.id}): ${r.id} === ${code} = ${r.id === code}, ${String(r.id)} === ${String(code)} = ${String(r.id) === String(code)}`);
-          return String(r.id) === String(code);
-        });
-        console.log(`📋 Found country:`, country);
+        const country = reporters.find(r => String(r.id) === String(code));
+        if (!country) {
+          console.log(`❌ Could not find country with code: ${code}`);
+        }
         return {
           code: code,
-          name: country ? country.text : code
+          name: country ? country.text : `Unknown (${code})`
         };
       });
 
-      console.log('📋 Countries with names:', countriesToPlot);
+      console.log('📋 Final countries to plot:', countriesToPlot);
       console.log('🌍 Países a graficar:', countriesToPlot.map(c => `${c.name} (${c.code})`).join(', '));
 
       // Format period based on frequency
