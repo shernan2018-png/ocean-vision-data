@@ -892,16 +892,16 @@ const Explorer = () => {
             <div>
               <Label htmlFor="forecast-reporter">País reportero</Label>
               <Select 
-                value={forecastInputs.reporterCode} 
+                value={String(forecastInputs.reporterCode)} 
                 onValueChange={(value) => setForecastInputs({ ...forecastInputs, reporterCode: value })}
                 disabled={loadingCatalogs}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={loadingCatalogs ? "Cargando..." : "Seleccionar país"} />
                 </SelectTrigger>
-                <SelectContent className="bg-background z-50">
+                <SelectContent className="bg-background z-[100] max-h-[300px]">
                   {reporters.map((country) => (
-                    <SelectItem key={country.id} value={country.id}>
+                    <SelectItem key={country.id} value={String(country.id)}>
                       {country.text}
                     </SelectItem>
                   ))}
@@ -912,16 +912,16 @@ const Explorer = () => {
             <div>
               <Label htmlFor="forecast-partner">País socio</Label>
               <Select 
-                value={forecastInputs.partnerCode} 
+                value={String(forecastInputs.partnerCode)} 
                 onValueChange={(value) => setForecastInputs({ ...forecastInputs, partnerCode: value })}
                 disabled={loadingCatalogs}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={loadingCatalogs ? "Cargando..." : "Seleccionar socio"} />
                 </SelectTrigger>
-                <SelectContent className="bg-background z-50">
+                <SelectContent className="bg-background z-[100] max-h-[300px]">
                   {partners.map((country) => (
-                    <SelectItem key={country.id} value={country.id}>
+                    <SelectItem key={country.id} value={String(country.id)}>
                       {country.text}
                     </SelectItem>
                   ))}
