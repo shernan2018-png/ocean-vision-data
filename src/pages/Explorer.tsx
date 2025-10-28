@@ -563,9 +563,7 @@ const Explorer = () => {
       
       console.log(`Divided into ${periodChunks.length} chunks:`, periodChunks.map(c => c.split(',').length + ' periods'));
 
-      console.log('🚀 STARTING TO FETCH DATA FOR COUNTRIES');
-      console.log('🚀 Total countries to fetch:', countriesToPlot.length);
-      console.log('🚀 Country list:', JSON.stringify(countriesToPlot, null, 2));
+      console.log('🚀 Countries to fetch:', countriesToPlot.map(c => `${c.name}(${c.code})`).join(', '));
 
       // Fetch data for each country SEQUENTIALLY with delay to avoid rate limiting
       const allCountryData = [];
@@ -573,12 +571,9 @@ const Explorer = () => {
       for (let i = 0; i < countriesToPlot.length; i++) {
         const country = countriesToPlot[i];
         
-        console.log(`\n🔄 === PROCESSING COUNTRY ${i + 1}/${countriesToPlot.length} ===`);
-        console.log(`🔄 Country name: ${country.name}`);
-        console.log(`🔄 Country code: ${country.code}`);
+        console.log(`\n🔄 [${i + 1}/${countriesToPlot.length}] Processing: ${country.name} (${country.code})`);
         
         try {
-          console.log(`[${i + 1}/${countriesToPlot.length}] Fetching data for ${country.name} (${country.code})`);
           
           // Add delay between countries (4 seconds) to avoid rate limiting
           if (i > 0) {
@@ -669,9 +664,10 @@ const Explorer = () => {
               periodMap.set(item.period, { period: item.period });
             }
             const periodData = periodMap.get(item.period);
-            console.log(`    Adding ${countryData.countryName} to period ${item.period}: unitPrice = ${item.unitPrice}`);
+            // Log removed to avoid thousands of console logs with large datasets
             periodData[countryData.countryName] = item.unitPrice;
           });
+          console.log(`  ✓ Added ${countryData.countryName} data to ${countryData.data.length} periods`);
         } else {
           console.log(`  ⚠️ No data for ${countryData.countryName}`);
         }
