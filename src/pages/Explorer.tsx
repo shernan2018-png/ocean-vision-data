@@ -800,62 +800,32 @@ const Explorer = () => {
       console.log('🔍 ========================================\n');
       // ========== FIN DE LOGS DETALLADOS ==========
 
-      // Send POST request to forecast endpoint
-      console.log('🚀 Enviando solicitud POST a http://localhost:8080/forecast');
+      // Invoke Edge Function
+      console.log('🚀 Invocando Edge Function: forecast');
       console.log('📦 Request body:', JSON.stringify(requestBody, null, 2));
       
-      let response;
-      try {
-        response = await fetch('http://localhost:8080/forecast', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody)
-        });
-      } catch (fetchError) {
-        console.error('❌ Error de conexión al servidor de pronósticos:', fetchError);
-        throw new Error('No se pudo conectar al servidor de pronósticos en http://localhost:8080. Asegúrate de que el servidor MATLAB esté corriendo.');
-      }
-
-      // ========== LOG COMPLETO DE LA RESPUESTA HTTP ==========
-      console.log('\n🔍 ========== RESPUESTA HTTP COMPLETA DEL SERVIDOR MATLAB ==========');
-      console.log('📡 STATUS CODE:', response.status);
-      console.log('📡 STATUS TEXT:', response.statusText);
-      console.log('📡 OK:', response.ok);
-      console.log('\n📋 HEADERS COMPLETOS:');
-      response.headers.forEach((value, key) => {
-        console.log(`   ${key}: ${value}`);
-      });
-      
-      // Capturar el body RAW como texto primero
-      const rawBody = await response.text();
-      console.log('\n📦 BODY RAW (sin procesar):');
-      console.log('   Longitud:', rawBody.length, 'caracteres');
-      console.log('   Contenido exacto:');
-      console.log(rawBody);
-      console.log('🔍 ================================================================\n');
-      // ========== FIN LOG RESPUESTA HTTP ==========
-
-      if (!response.ok) {
-        console.error('❌ Error del servidor:', response.status, rawBody);
-        throw new Error(`Error del servidor de pronósticos (${response.status}): ${rawBody || response.statusText}`);
-      }
-
-      // Ahora intentar parsear el body como JSON
       let forecastResult;
       try {
-        console.log('🔄 Intentando parsear el body RAW como JSON...');
-        forecastResult = JSON.parse(rawBody);
-        console.log('✅ Body parseado exitosamente con JSON.parse()');
-        console.log('📈 Tipo después de parsear:', typeof forecastResult);
-        console.log('📈 Es Array:', Array.isArray(forecastResult));
-        console.log('📈 Contenido parseado:');
-        console.log(JSON.stringify(forecastResult, null, 2));
-      } catch (parseError) {
-        console.error('❌ Error al parsear JSON:', parseError);
-        console.error('❌ El servidor no devolvió JSON válido');
-        throw new Error('El servidor no devolvió JSON válido');
+        const { data, error } = await supabase.functions.invoke('forecast', {
+          body: requestBody,
+        });
+
+        console.log('\n🔍 ========== RESPUESTA DE EDGE FUNCTION ==========');
+        if (error) {
+          console.error('❌ Error desde Edge Function:', error);
+          throw new Error(`Error del servidor de pronósticos: ${error.message}`);
+        }
+
+        console.log('✅ Edge Function respondió exitosamente');
+        console.log('📦 Data recibida:', JSON.stringify(data, null, 2));
+        console.log('📈 Tipo:', typeof data);
+        console.log('📈 Es Array:', Array.isArray(data));
+        console.log('🔍 ================================================\n');
+
+        forecastResult = data;
+      } catch (invokeError) {
+        console.error('❌ Error invocando Edge Function:', invokeError);
+        throw new Error('No se pudo invocar la Edge Function de pronósticos. Verifica que esté desplegada.');
       }
 
       // Verify that the server returns an array with period and value
