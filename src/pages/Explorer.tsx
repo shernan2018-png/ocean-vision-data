@@ -429,6 +429,11 @@ const Explorer = () => {
         inputs[`X${index + 2}`] = [1.0, 1.5, 2.0]; // Placeholder data
       });
 
+      // Determine the last date from the period end
+      const lastDate = forecastInputs.freq === 'A' 
+        ? `${forecastInputs.yearEnd}` 
+        : forecastInputs.periodEnd.toISOString().split('T')[0];
+
       const response = await fetch('https://ophthalmic-rolf-ungallant.ngrok-free.dev/forecast', {
         method: 'POST',
         headers: {
