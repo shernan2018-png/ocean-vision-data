@@ -16,7 +16,7 @@ serve(async (req) => {
     console.log(body);
 
     // 🔴 Cambia esta URL por tu túnel ngrok real:
-    const NGROK_URL = "https://ophthalmic-rolf-ungallant.ngrok-free.dev/forecast";
+    const NGROK_URL = "https://ophthalmic-rolf-ungallant.ngrok-free.dev";
 
     console.log("📤 Enviando datos a tu servidor MATLAB en ngrok...");
     const response = await fetch(`${NGROK_URL}/forecast`, {
