@@ -818,7 +818,17 @@ const Explorer = () => {
         throw new Error('No se pudo conectar al servidor de pronósticos en http://localhost:8080. Asegúrate de que el servidor MATLAB esté corriendo.');
       }
 
-      console.log('📡 Response status:', response.status);
+      // ========== LOG COMPLETO DE LA RESPUESTA HTTP ==========
+      console.log('\n🔍 ========== RESPUESTA HTTP COMPLETA ==========');
+      console.log('📡 Status:', response.status);
+      console.log('📡 Status Text:', response.statusText);
+      console.log('📡 OK:', response.ok);
+      console.log('📡 Headers:');
+      response.headers.forEach((value, key) => {
+        console.log(`   ${key}: ${value}`);
+      });
+      console.log('🔍 ==========================================\n');
+      // ========== FIN LOG RESPUESTA HTTP ==========
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -827,7 +837,12 @@ const Explorer = () => {
       }
 
       const forecastResult = await response.json();
-      console.log('📈 Respuesta del servidor:', forecastResult);
+      console.log('\n📦 ========== BODY DE LA RESPUESTA ==========');
+      console.log('📈 Tipo:', typeof forecastResult);
+      console.log('📈 Es Array:', Array.isArray(forecastResult));
+      console.log('📈 Contenido completo:');
+      console.log(JSON.stringify(forecastResult, null, 2));
+      console.log('🔍 ==========================================\n');
 
       // Verify that the server returns an array with period and value
       if (!Array.isArray(forecastResult) || forecastResult.length === 0) {
