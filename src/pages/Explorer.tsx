@@ -429,7 +429,7 @@ const Explorer = () => {
         inputs[`X${index + 2}`] = [1.0, 1.5, 2.0]; // Placeholder data
       });
 
-      const response = await fetch('http://localhost:8080/forecast', {
+      const response = await fetch('https://ophthalmic-rolf-ungallant.ngrok-free.dev/forecast', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -437,6 +437,7 @@ const Explorer = () => {
         body: JSON.stringify({
           inputs,
           horizon,
+          lastDate,
         }),
       });
 
