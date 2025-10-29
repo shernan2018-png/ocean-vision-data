@@ -758,8 +758,8 @@ const Explorer = () => {
         }
       });
 
-      // Get the last date from the price chart data
-      const lastPeriod = priceChartData[priceChartData.length - 1].period;
+      // Get the last date from the chart data (we already validated chartDataToUse has data)
+      const lastPeriod = chartDataToUse[chartDataToUse.length - 1].period;
       // Convert period format from "202212" to "2022-12"
       const lastDate = `${lastPeriod.substring(0, 4)}-${lastPeriod.substring(4, 6)}`;
 
