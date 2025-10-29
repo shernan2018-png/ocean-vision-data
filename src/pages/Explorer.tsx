@@ -819,30 +819,44 @@ const Explorer = () => {
       }
 
       // ========== LOG COMPLETO DE LA RESPUESTA HTTP ==========
-      console.log('\n🔍 ========== RESPUESTA HTTP COMPLETA ==========');
-      console.log('📡 Status:', response.status);
-      console.log('📡 Status Text:', response.statusText);
+      console.log('\n🔍 ========== RESPUESTA HTTP COMPLETA DEL SERVIDOR MATLAB ==========');
+      console.log('📡 STATUS CODE:', response.status);
+      console.log('📡 STATUS TEXT:', response.statusText);
       console.log('📡 OK:', response.ok);
-      console.log('📡 Headers:');
+      console.log('\n📋 HEADERS COMPLETOS:');
       response.headers.forEach((value, key) => {
         console.log(`   ${key}: ${value}`);
       });
-      console.log('🔍 ==========================================\n');
+      
+      // Capturar el body RAW como texto primero
+      const rawBody = await response.text();
+      console.log('\n📦 BODY RAW (sin procesar):');
+      console.log('   Longitud:', rawBody.length, 'caracteres');
+      console.log('   Contenido exacto:');
+      console.log(rawBody);
+      console.log('🔍 ================================================================\n');
       // ========== FIN LOG RESPUESTA HTTP ==========
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error del servidor:', response.status, errorText);
-        throw new Error(`Error del servidor de pronósticos (${response.status}): ${errorText || response.statusText}`);
+        console.error('❌ Error del servidor:', response.status, rawBody);
+        throw new Error(`Error del servidor de pronósticos (${response.status}): ${rawBody || response.statusText}`);
       }
 
-      const forecastResult = await response.json();
-      console.log('\n📦 ========== BODY DE LA RESPUESTA ==========');
-      console.log('📈 Tipo:', typeof forecastResult);
-      console.log('📈 Es Array:', Array.isArray(forecastResult));
-      console.log('📈 Contenido completo:');
-      console.log(JSON.stringify(forecastResult, null, 2));
-      console.log('🔍 ==========================================\n');
+      // Ahora intentar parsear el body como JSON
+      let forecastResult;
+      try {
+        console.log('🔄 Intentando parsear el body RAW como JSON...');
+        forecastResult = JSON.parse(rawBody);
+        console.log('✅ Body parseado exitosamente con JSON.parse()');
+        console.log('📈 Tipo después de parsear:', typeof forecastResult);
+        console.log('📈 Es Array:', Array.isArray(forecastResult));
+        console.log('📈 Contenido parseado:');
+        console.log(JSON.stringify(forecastResult, null, 2));
+      } catch (parseError) {
+        console.error('❌ Error al parsear JSON:', parseError);
+        console.error('❌ El servidor no devolvió JSON válido');
+        throw new Error('El servidor no devolvió JSON válido');
+      }
 
       // Verify that the server returns an array with period and value
       if (!Array.isArray(forecastResult) || forecastResult.length === 0) {
