@@ -1,1 +1,4 @@
 project_id = "kunykwrizywmvjmoaioo"
+
+[functions.forecast]
+verify_jwt = false
