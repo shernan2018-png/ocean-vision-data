@@ -2119,11 +2119,22 @@ const Explorer = () => {
             </div>
           )}
 
+          {(() => {
+            console.log('🔍 VERIFICACIÓN DE RENDERIZADO:');
+            console.log('🔍 forecastData.length:', forecastData.length);
+            console.log('🔍 narxHistoricalData.length:', narxHistoricalData.length);
+            return null;
+          })()}
+          
           {forecastData.length > 0 && (
             <div className="mt-6 space-y-6 border-t pt-6">
               <div>
                 <h3 className="text-lg font-semibold mb-4">Gráfico de Pronóstico NARX</h3>
                 {(() => {
+                  console.log('🎨 INICIO RENDERIZADO GRÁFICA');
+                  console.log('🎨 narxHistoricalData disponible:', narxHistoricalData.length, 'registros');
+                  console.log('🎨 forecastData disponible:', forecastData.length, 'registros');
+                  
                   // Combine historical and forecast data properly for Recharts
                   // Each object must have ALL properties (historical AND forecast)
                   const chartData = [
@@ -2139,10 +2150,9 @@ const Explorer = () => {
                     }))
                   ];
                   
-                  console.log('🎨 Renderizando gráfica NARX');
-                  console.log('🎨 Total puntos:', chartData.length);
-                  console.log('🎨 Primeros 3:', chartData.slice(0, 3));
-                  console.log('🎨 Últimos 3:', chartData.slice(-3));
+                  console.log('🎨 Total puntos combinados:', chartData.length);
+                  console.log('🎨 Primeros 3 puntos:', JSON.stringify(chartData.slice(0, 3), null, 2));
+                  console.log('🎨 Últimos 3 puntos:', JSON.stringify(chartData.slice(-3), null, 2));
                   
                   return (
                     <ResponsiveContainer width="100%" height={400}>
