@@ -111,6 +111,7 @@ const Explorer = () => {
     horizon: '3',
   });
   const [forecastData, setForecastData] = useState<any[]>([]);
+  const [narxHistoricalData, setNarxHistoricalData] = useState<any[]>([]); // Store historical data for NARX
   const [loadingForecast, setLoadingForecast] = useState(false);
   const [priceChartData, setPriceChartData] = useState<any[]>([]);
   const [loadingPriceChart, setLoadingPriceChart] = useState(false);
@@ -414,19 +415,102 @@ const Explorer = () => {
         return;
       }
 
-      // Build inputs object for the MATLAB model
-      // X1 will be the base variable (reporter or partner price)
-      // X2-X5 will be the additional countries if selected
-      const inputs: any = {};
+      // Format period to fetch historical data
+      let period: string;
+      if (forecastInputs.freq === 'A') {
+        if (forecastInputs.yearStart === forecastInputs.yearEnd) {
+          period = forecastInputs.yearStart.toString();
+        } else {
+          const years: string[] = [];
+          for (let year = forecastInputs.yearStart; year <= forecastInputs.yearEnd; year++) {
+            years.push(year.toString());
+          }
+          period = years.join(',');
+        }
+      } else {
+        const startYear = forecastInputs.periodStart.getFullYear();
+        const startMonth = forecastInputs.periodStart.getMonth();
+        const endYear = forecastInputs.periodEnd.getFullYear();
+        const endMonth = forecastInputs.periodEnd.getMonth();
+        
+        const periods: string[] = [];
+        let currentDate = new Date(startYear, startMonth);
+        const endDate = new Date(endYear, endMonth);
+        
+        while (currentDate <= endDate) {
+          const yearStr = currentDate.getFullYear().toString();
+          const monthStr = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+          periods.push(`${yearStr}-${monthStr}`);
+          currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+        
+        period = periods.join(',');
+      }
+
+      // Fetch historical data
+      const periodList = period.split(',');
+      const periodChunks: string[] = [];
       
-      // For now, we'll pass placeholder arrays since we need historical data
-      // In a real implementation, you would fetch this data from your API
-      inputs.X1 = [2.3, 2.5, 2.7, 2.8]; // Placeholder for base variable
+      for (let i = 0; i < periodList.length; i += 12) {
+        const chunk = periodList.slice(i, i + 12);
+        periodChunks.push(chunk.join(','));
+      }
+
+      const allHistoricalData: any[] = [];
       
-      // Add additional countries as X2-X5
+      for (let chunkIndex = 0; chunkIndex < periodChunks.length; chunkIndex++) {
+        const chunkPeriod = periodChunks[chunkIndex];
+        
+        if (chunkIndex > 0) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+
+        const { data, error } = await supabase.functions.invoke('comtrade-data', {
+          body: {
+            reporterCode: forecastInputs.reporterCode,
+            partnerCode: forecastInputs.partnerCode,
+            cmdCode: forecastInputs.cmdCode,
+            flowCode: forecastInputs.flowCode,
+            freq: forecastInputs.freq,
+            period: chunkPeriod
+          }
+        });
+
+        if (error) {
+          console.error(`Error fetching historical data:`, error);
+          continue;
+        }
+
+        const chunkData = data?.data || [];
+        allHistoricalData.push(...chunkData);
+      }
+
+      // Process historical data
+      const historicalValues = allHistoricalData
+        .sort((a: any, b: any) => String(a.period).localeCompare(String(b.period)))
+        .map((item: any) => {
+          const periodStr = String(item.period);
+          const year = periodStr.substring(0, 4);
+          const month = periodStr.length >= 6 ? periodStr.substring(4, 6) : '';
+          const displayPeriod = forecastInputs.freq === 'A' ? year : `${year}-${month}`;
+          
+          return {
+            period: displayPeriod,
+            historical: item.netWgt > 0 ? (item.primaryValue / item.netWgt) : null,
+          };
+        });
+
+      // Build inputs object for the MATLAB model using historical data
+      const inputs: any = {
+        X1: historicalValues
+          .map(item => item.historical)
+          .filter((value: any) => value !== null && value !== undefined && value > 0)
+      };
+      
+      // Add additional countries as X2-X5 if needed
       const validAdditionalCountries = forecastInputs.additionalCountries.filter(c => c !== 'none' && c !== '');
       validAdditionalCountries.forEach((country, index) => {
-        inputs[`X${index + 2}`] = [1.0, 1.5, 2.0]; // Placeholder data
+        inputs[`X${index + 2}`] = [1.0, 1.5, 2.0]; // Placeholder data - would need to fetch actual data
       });
 
       // Determine the last date from the period end in format "YYYY-MM" or "YYYY"
@@ -457,10 +541,12 @@ const Explorer = () => {
       const horizonArray = data.horizon || [];
       
       const forecastChartData = forecastArray.map((value: number, index: number) => ({
-        month: horizonArray[index] || `Mes ${index + 1}`,
+        period: horizonArray[index] || `Mes ${index + 1}`,
         forecast: value,
       }));
 
+      // Store historical and forecast data separately
+      setNarxHistoricalData(historicalValues.filter(item => item.historical !== null));
       setForecastData(forecastChartData);
       
       toast({
@@ -1985,46 +2071,96 @@ const Explorer = () => {
             <div className="mt-6 space-y-6 border-t pt-6">
               <div>
                 <h3 className="text-lg font-semibold mb-4">Gráfico de Pronóstico NARX</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={forecastData}>
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart data={[
+                    ...narxHistoricalData.map(item => ({ period: item.period, historical: item.historical, forecast: null })),
+                    ...forecastData.map(item => ({ period: item.period, historical: null, forecast: item.forecast }))
+                  ]}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
+                    <XAxis 
+                      dataKey="period" 
+                      label={{ value: 'Periodo (Mes/Año)', position: 'insideBottom', offset: -5 }}
+                    />
+                    <YAxis 
+                      label={{ value: 'Precio Unitario (USD/kg)', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => {
+                        if (value === null) return null;
+                        return [value.toFixed(4), name === 'historical' ? 'Histórico' : 'Pronóstico (NARX)'];
+                      }}
+                    />
+                    <Legend 
+                      formatter={(value) => value === 'historical' ? 'Histórico' : 'Pronóstico (NARX)'}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="historical" 
+                      stroke="#3b82f6" 
+                      strokeWidth={2}
+                      name="Histórico"
+                      connectNulls={false}
+                      dot={{ r: 4, fill: '#3b82f6' }}
+                    />
                     <Line 
                       type="monotone" 
                       dataKey="forecast" 
-                      stroke="hsl(var(--primary))" 
+                      stroke="#f97316" 
                       strokeWidth={2}
-                      name="Pronóstico"
+                      name="Pronóstico (NARX)"
+                      connectNulls={false}
+                      dot={{ r: 4, fill: '#f97316' }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
                 <p className="text-sm text-muted-foreground mt-2 text-center">
-                  Pronóstico generado con modelo NARX
+                  Datos históricos y pronóstico generado con modelo NARX
                 </p>
               </div>
 
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Valores Pronosticados NARX</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left p-2 font-semibold">Periodo</th>
-                        <th className="text-left p-2 font-semibold">Valor Pronosticado</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {forecastData.map((row, index) => (
-                        <tr key={index} className="border-b hover:bg-muted/50">
-                          <td className="p-2">{row.month}</td>
-                          <td className="p-2">{row.forecast.toFixed(4)}</td>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Datos Históricos</h3>
+                  <div className="overflow-x-auto max-h-[300px]">
+                    <table className="w-full border-collapse">
+                      <thead className="sticky top-0 bg-background">
+                        <tr className="border-b">
+                          <th className="text-left p-2 font-semibold">Periodo</th>
+                          <th className="text-right p-2 font-semibold">Precio (USD/kg)</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {narxHistoricalData.map((row, index) => (
+                          <tr key={index} className="border-b hover:bg-muted/50">
+                            <td className="p-2">{row.period}</td>
+                            <td className="p-2 text-right text-blue-600 dark:text-blue-400 font-mono">{row.historical?.toFixed(4) || 'N/A'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Valores Pronosticados NARX</h3>
+                  <div className="overflow-x-auto max-h-[300px]">
+                    <table className="w-full border-collapse">
+                      <thead className="sticky top-0 bg-background">
+                        <tr className="border-b">
+                          <th className="text-left p-2 font-semibold">Periodo</th>
+                          <th className="text-right p-2 font-semibold">Pronóstico (USD/kg)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {forecastData.map((row, index) => (
+                          <tr key={index} className="border-b hover:bg-muted/50">
+                            <td className="p-2">{row.period}</td>
+                            <td className="p-2 text-right text-orange-600 dark:text-orange-400 font-mono font-bold">{row.forecast.toFixed(4)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
