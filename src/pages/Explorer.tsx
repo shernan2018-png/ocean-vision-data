@@ -2131,8 +2131,14 @@ const Explorer = () => {
                   console.log('🎨 Datos pronóstico:', forecastData.slice(0, 3));
                   
                   const chartData = [
-                    ...narxHistoricalData.map(item => ({ period: item.period, historical: item.historical, forecast: null })),
-                    ...forecastData.map(item => ({ period: item.period, historical: null, forecast: item.forecast }))
+                    ...narxHistoricalData.map(item => ({ 
+                      period: item.period, 
+                      historical: item.historical
+                    })),
+                    ...forecastData.map(item => ({ 
+                      period: item.period, 
+                      forecast: item.forecast
+                    }))
                   ];
                   
                   console.log('🎨 Datos combinados para la gráfica:', chartData.length, 'puntos');
@@ -2143,8 +2149,14 @@ const Explorer = () => {
                 })()}
                 <ResponsiveContainer width="100%" height={400}>
                   <LineChart data={[
-                    ...narxHistoricalData.map(item => ({ period: item.period, historical: item.historical, forecast: null })),
-                    ...forecastData.map(item => ({ period: item.period, historical: null, forecast: item.forecast }))
+                    ...narxHistoricalData.map(item => ({ 
+                      period: item.period, 
+                      historical: item.historical
+                    })),
+                    ...forecastData.map(item => ({ 
+                      period: item.period, 
+                      forecast: item.forecast
+                    }))
                   ]}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
@@ -2153,12 +2165,14 @@ const Explorer = () => {
                     />
                     <YAxis 
                       label={{ value: 'Precio Unitario (USD/kg)', angle: -90, position: 'insideLeft' }}
+                      domain={['auto', 'auto']}
                     />
                     <Tooltip 
                       formatter={(value: number, name: string) => {
-                        if (value === null) return null;
-                        return [value.toFixed(4), name === 'historical' ? 'Histórico' : 'Pronóstico (NARX)'];
+                        if (value === null || value === undefined) return null;
+                        return [`$${value.toFixed(2)}/kg`, name === 'historical' ? 'Histórico' : 'Pronóstico (NARX)'];
                       }}
+                      labelFormatter={(label) => `Periodo: ${label}`}
                     />
                     <Legend 
                       formatter={(value) => value === 'historical' ? 'Histórico' : 'Pronóstico (NARX)'}
@@ -2170,7 +2184,7 @@ const Explorer = () => {
                       strokeWidth={3}
                       name="Histórico"
                       dot={{ r: 5, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
-                      activeDot={{ r: 7 }}
+                      activeDot={{ r: 8 }}
                     />
                     <Line 
                       type="monotone" 
@@ -2178,13 +2192,13 @@ const Explorer = () => {
                       stroke="#f97316" 
                       strokeWidth={3}
                       name="Pronóstico (NARX)"
-                      connectNulls={false}
-                      dot={{ r: 4, fill: '#f97316' }}
+                      dot={{ r: 5, fill: '#f97316', strokeWidth: 2, stroke: '#fff' }}
+                      activeDot={{ r: 8 }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
                 <p className="text-sm text-muted-foreground mt-2 text-center">
-                  Datos históricos y pronóstico generado con modelo NARX
+                  Datos históricos (azul) y pronóstico NARX (naranja)
                 </p>
               </div>
 
