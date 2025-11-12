@@ -26,6 +26,7 @@ const Explorer = () => {
   const [reporters, setReporters] = useState<Country[]>([]);
   const [partners, setPartners] = useState<Country[]>([]);
   const [loadingCatalogs, setLoadingCatalogs] = useState(true);
+  const [showAllRecords, setShowAllRecords] = useState(false);
   
   // Seafood and Crustaceans HS Codes
   const seafoodHSCodes = [
@@ -1589,7 +1590,7 @@ const Explorer = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {chartData.slice(0, 10).map((row: any, idx: number) => {
+                    {(showAllRecords ? chartData : chartData.slice(0, 10)).map((row: any, idx: number) => {
                       const unitPrice = row.quantity > 0 ? (row.value / row.quantity).toFixed(2) : 'N/A';
                       return (
                         <tr key={idx} className="border-b hover:bg-muted/50">
@@ -1609,9 +1610,19 @@ const Explorer = () => {
                   </tbody>
                 </table>
                 {chartData.length > 10 && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Showing 10 of {chartData.length} records
-                  </p>
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-sm text-muted-foreground">
+                      Showing {showAllRecords ? chartData.length : 10} of {chartData.length} records
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAllRecords(!showAllRecords)}
+                      className="text-sm"
+                    >
+                      {showAllRecords ? 'Mostrar menos' : 'Mostrar todos'}
+                    </Button>
+                  </div>
                 )}
               </div>
             </Card>
