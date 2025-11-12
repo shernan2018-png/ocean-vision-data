@@ -486,6 +486,7 @@ const Explorer = () => {
       }
 
       // Process historical data
+      console.log('📊 Datos históricos crudos recibidos:', allHistoricalData.length);
       const historicalValues = allHistoricalData
         .sort((a: any, b: any) => String(a.period).localeCompare(String(b.period)))
         .map((item: any) => {
@@ -500,12 +501,17 @@ const Explorer = () => {
           };
         });
 
+      console.log('📈 Datos históricos procesados:', historicalValues.length);
+      console.log('📈 Primeros 3 valores históricos:', historicalValues.slice(0, 3));
+
       // Build inputs object for the MATLAB model using historical data
       const inputs: any = {
         X1: historicalValues
           .map(item => item.historical)
           .filter((value: any) => value !== null && value !== undefined && value > 0)
       };
+      
+      console.log('📊 X1 para modelo tiene', inputs.X1.length, 'valores');
       
       // Add additional countries as X2-X5 if needed
       const validAdditionalCountries = forecastInputs.additionalCountries.filter(c => c !== 'none' && c !== '');
@@ -546,12 +552,18 @@ const Explorer = () => {
       }));
 
       // Store historical and forecast data separately
-      setNarxHistoricalData(historicalValues.filter(item => item.historical !== null));
+      const filteredHistorical = historicalValues.filter(item => item.historical !== null);
+      console.log('💾 Guardando datos históricos NARX:', filteredHistorical.length, 'periodos');
+      console.log('💾 Datos históricos NARX:', filteredHistorical);
+      console.log('💾 Guardando pronóstico NARX:', forecastChartData.length, 'periodos');
+      console.log('💾 Pronóstico NARX:', forecastChartData);
+      
+      setNarxHistoricalData(filteredHistorical);
       setForecastData(forecastChartData);
       
       toast({
         title: 'Pronóstico generado',
-        description: `Se generaron ${forecastArray.length} valores`,
+        description: `${filteredHistorical.length} periodos históricos + ${forecastArray.length} valores pronosticados`,
       });
     } catch (error) {
       console.error('Error generating forecast:', error);
@@ -2071,6 +2083,24 @@ const Explorer = () => {
             <div className="mt-6 space-y-6 border-t pt-6">
               <div>
                 <h3 className="text-lg font-semibold mb-4">Gráfico de Pronóstico NARX</h3>
+                {(() => {
+                  console.log('🎨 Renderizando gráfica NARX');
+                  console.log('🎨 narxHistoricalData.length:', narxHistoricalData.length);
+                  console.log('🎨 forecastData.length:', forecastData.length);
+                  console.log('🎨 Datos históricos:', narxHistoricalData.slice(0, 3));
+                  console.log('🎨 Datos pronóstico:', forecastData.slice(0, 3));
+                  
+                  const chartData = [
+                    ...narxHistoricalData.map(item => ({ period: item.period, historical: item.historical, forecast: null })),
+                    ...forecastData.map(item => ({ period: item.period, historical: null, forecast: item.forecast }))
+                  ];
+                  
+                  console.log('🎨 Datos combinados para la gráfica:', chartData.length, 'puntos');
+                  console.log('🎨 Primeros 3 puntos combinados:', chartData.slice(0, 3));
+                  console.log('🎨 Últimos 3 puntos combinados:', chartData.slice(-3));
+                  
+                  return null;
+                })()}
                 <ResponsiveContainer width="100%" height={400}>
                   <LineChart data={[
                     ...narxHistoricalData.map(item => ({ period: item.period, historical: item.historical, forecast: null })),
