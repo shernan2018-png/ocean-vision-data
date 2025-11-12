@@ -977,8 +977,9 @@ const Explorer = () => {
       const forecastArray: { period: string; forecast: number; lower: number; upper: number }[] = 
         forecastResult.map((item: { period: string; value: number }) => {
           // Calculate confidence intervals (simple ±15%)
-          const forecastValue = Math.max(0, item.value);
-          const lower = Math.max(0, forecastValue * 0.85);
+          // Convert negative values to positive using Math.abs
+          const forecastValue = Math.abs(item.value);
+          const lower = forecastValue * 0.85;
           const upper = forecastValue * 1.15;
           
           // Format period properly (from "202301" to "2023-01")
@@ -2166,7 +2167,7 @@ const Explorer = () => {
                         {narxHistoricalData.map((row, index) => (
                           <tr key={index} className="border-b hover:bg-muted/50">
                             <td className="p-2">{row.period}</td>
-                            <td className="p-2 text-right text-blue-600 dark:text-blue-400 font-mono">{row.historical?.toFixed(4) || 'N/A'}</td>
+                            <td className="p-2 text-right text-blue-600 dark:text-blue-400 font-mono">{row.historical?.toFixed(2) || 'N/A'}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -2188,7 +2189,7 @@ const Explorer = () => {
                         {forecastData.map((row, index) => (
                           <tr key={index} className="border-b hover:bg-muted/50">
                             <td className="p-2">{row.period}</td>
-                            <td className="p-2 text-right text-orange-600 dark:text-orange-400 font-mono font-bold">{row.forecast.toFixed(4)}</td>
+                            <td className="p-2 text-right text-orange-600 dark:text-orange-400 font-mono font-bold">{row.forecast.toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
