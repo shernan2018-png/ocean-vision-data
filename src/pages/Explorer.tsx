@@ -2167,16 +2167,16 @@ const Explorer = () => {
                       type="monotone" 
                       dataKey="historical" 
                       stroke="#3b82f6" 
-                      strokeWidth={2}
+                      strokeWidth={3}
                       name="Histórico"
-                      connectNulls={false}
-                      dot={{ r: 4, fill: '#3b82f6' }}
+                      dot={{ r: 5, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
+                      activeDot={{ r: 7 }}
                     />
                     <Line 
                       type="monotone" 
                       dataKey="forecast" 
                       stroke="#f97316" 
-                      strokeWidth={2}
+                      strokeWidth={3}
                       name="Pronóstico (NARX)"
                       connectNulls={false}
                       dot={{ r: 4, fill: '#f97316' }}
