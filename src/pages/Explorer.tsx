@@ -2124,79 +2124,70 @@ const Explorer = () => {
               <div>
                 <h3 className="text-lg font-semibold mb-4">Gráfico de Pronóstico NARX</h3>
                 {(() => {
-                  console.log('🎨 Renderizando gráfica NARX');
-                  console.log('🎨 narxHistoricalData.length:', narxHistoricalData.length);
-                  console.log('🎨 forecastData.length:', forecastData.length);
-                  console.log('🎨 Datos históricos:', narxHistoricalData.slice(0, 3));
-                  console.log('🎨 Datos pronóstico:', forecastData.slice(0, 3));
-                  
+                  // Combine historical and forecast data properly for Recharts
+                  // Each object must have ALL properties (historical AND forecast)
                   const chartData = [
                     ...narxHistoricalData.map(item => ({ 
                       period: item.period, 
-                      historical: item.historical
+                      historical: item.historical,
+                      forecast: undefined  // Explicitly set undefined for historical data
                     })),
                     ...forecastData.map(item => ({ 
                       period: item.period, 
+                      historical: undefined,  // Explicitly set undefined for forecast data
                       forecast: item.forecast
                     }))
                   ];
                   
-                  console.log('🎨 Datos combinados para la gráfica:', chartData.length, 'puntos');
-                  console.log('🎨 Primeros 3 puntos combinados:', chartData.slice(0, 3));
-                  console.log('🎨 Últimos 3 puntos combinados:', chartData.slice(-3));
+                  console.log('🎨 Renderizando gráfica NARX');
+                  console.log('🎨 Total puntos:', chartData.length);
+                  console.log('🎨 Primeros 3:', chartData.slice(0, 3));
+                  console.log('🎨 Últimos 3:', chartData.slice(-3));
                   
-                  return null;
+                  return (
+                    <ResponsiveContainer width="100%" height={400}>
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="period" 
+                          label={{ value: 'Periodo (Mes/Año)', position: 'insideBottom', offset: -5 }}
+                        />
+                        <YAxis 
+                          label={{ value: 'Precio Unitario (USD/kg)', angle: -90, position: 'insideLeft' }}
+                          domain={['auto', 'auto']}
+                        />
+                        <Tooltip 
+                          formatter={(value: number, name: string) => {
+                            if (value === null || value === undefined) return null;
+                            return [`$${value.toFixed(2)}/kg`, name === 'historical' ? 'Histórico' : 'Pronóstico (NARX)'];
+                          }}
+                          labelFormatter={(label) => `Periodo: ${label}`}
+                        />
+                        <Legend 
+                          formatter={(value) => value === 'historical' ? 'Histórico' : 'Pronóstico (NARX)'}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="historical" 
+                          stroke="#3b82f6" 
+                          strokeWidth={3}
+                          name="historical"
+                          dot={{ r: 5, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
+                          activeDot={{ r: 8 }}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="forecast" 
+                          stroke="#f97316" 
+                          strokeWidth={3}
+                          name="forecast"
+                          dot={{ r: 5, fill: '#f97316', strokeWidth: 2, stroke: '#fff' }}
+                          activeDot={{ r: 8 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  );
                 })()}
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={[
-                    ...narxHistoricalData.map(item => ({ 
-                      period: item.period, 
-                      historical: item.historical
-                    })),
-                    ...forecastData.map(item => ({ 
-                      period: item.period, 
-                      forecast: item.forecast
-                    }))
-                  ]}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="period" 
-                      label={{ value: 'Periodo (Mes/Año)', position: 'insideBottom', offset: -5 }}
-                    />
-                    <YAxis 
-                      label={{ value: 'Precio Unitario (USD/kg)', angle: -90, position: 'insideLeft' }}
-                      domain={['auto', 'auto']}
-                    />
-                    <Tooltip 
-                      formatter={(value: number, name: string) => {
-                        if (value === null || value === undefined) return null;
-                        return [`$${value.toFixed(2)}/kg`, name === 'historical' ? 'Histórico' : 'Pronóstico (NARX)'];
-                      }}
-                      labelFormatter={(label) => `Periodo: ${label}`}
-                    />
-                    <Legend 
-                      formatter={(value) => value === 'historical' ? 'Histórico' : 'Pronóstico (NARX)'}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="historical" 
-                      stroke="#3b82f6" 
-                      strokeWidth={3}
-                      name="Histórico"
-                      dot={{ r: 5, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
-                      activeDot={{ r: 8 }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="forecast" 
-                      stroke="#f97316" 
-                      strokeWidth={3}
-                      name="Pronóstico (NARX)"
-                      dot={{ r: 5, fill: '#f97316', strokeWidth: 2, stroke: '#fff' }}
-                      activeDot={{ r: 8 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
                 <p className="text-sm text-muted-foreground mt-2 text-center">
                   Datos históricos (azul) y pronóstico NARX (naranja)
                 </p>
