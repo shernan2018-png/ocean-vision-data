@@ -790,6 +790,8 @@ const Explorer = () => {
         .map(item => item[baseSeriesName])
         .filter(value => value !== undefined && value !== null && value > 0);
       
+      let usedKeyName = baseSeriesName; // Rastrear qué clave se usó finalmente
+      
       // Si no encuentra datos con el formato "Reporter → Partner", buscar solo con el nombre del reporter
       if (baseSeries.length === 0) {
         console.warn('⚠️ No se encontraron datos con el formato "Reporter → Partner"');
@@ -804,6 +806,7 @@ const Explorer = () => {
         
         if (matchingKey) {
           console.log('✅ Encontrada clave alternativa:', matchingKey);
+          usedKeyName = matchingKey; // Guardar la clave que funcionó
           baseSeries = chartDataToUse
             .map(item => item[matchingKey])
             .filter(value => value !== undefined && value !== null && value > 0);
@@ -834,6 +837,29 @@ const Explorer = () => {
       const inputs: any = {
         X1: baseSeries // Serie de precios del país reportero → socio
       };
+      
+      // 💾 Guardar datos históricos para la gráfica (del país reportero)
+      // Los datos históricos son los mismos que baseSeries pero con sus períodos
+      const historicalDataForChart = chartDataToUse
+        .map((item) => {
+          const value = item[usedKeyName];
+          if (value !== undefined && value !== null && value > 0) {
+            const periodStr = String(item.period);
+            const formattedPeriod = periodStr.length >= 6 
+              ? `${periodStr.substring(0, 4)}-${periodStr.substring(4, 6)}`
+              : periodStr;
+            return {
+              period: formattedPeriod,
+              historical: value
+            };
+          }
+          return null;
+        })
+        .filter(item => item !== null);
+      
+      console.log('💾 Datos históricos para gráfica NARX:', historicalDataForChart.length, 'periodos');
+      console.log('💾 Primeros 3 históricos:', historicalDataForChart.slice(0, 3));
+      console.log('💾 Últimos 3 históricos:', historicalDataForChart.slice(-3));
       
       // Collect exogenous variables X2-X5 from additional countries (unit prices)
       forecastInputs.additionalCountries.forEach((countryCode, index) => {
@@ -954,14 +980,28 @@ const Explorer = () => {
           const lower = Math.max(0, forecastValue * 0.85);
           const upper = forecastValue * 1.15;
           
+          // Format period properly (from "202301" to "2023-01")
+          const periodStr = String(item.period);
+          const formattedPeriod = periodStr.length >= 6 
+            ? `${periodStr.substring(0, 4)}-${periodStr.substring(4, 6)}`
+            : item.period;
+          
           return {
-            period: item.period,
+            period: formattedPeriod,
             forecast: forecastValue,
             lower,
             upper
           };
         });
 
+      // 💾 Guardar datos históricos Y pronóstico para la gráfica NARX
+      console.log('💾 Guardando datos históricos NARX:', historicalDataForChart.length, 'periodos');
+      console.log('💾 Primeros 3 históricos:', historicalDataForChart.slice(0, 3));
+      console.log('💾 Guardando pronóstico NARX:', forecastArray.length, 'periodos');
+      console.log('💾 Primeros 3 pronóstico:', forecastArray.slice(0, 3));
+      
+      setNarxHistoricalData(historicalDataForChart);
+      setForecastData(forecastArray);
       setPriceForecastData(forecastArray);
 
       const exoCount = Object.keys(inputs).length - 1; // Exclude X1
