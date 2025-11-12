@@ -2055,69 +2055,6 @@ const Explorer = () => {
             </div>
           )}
 
-          {priceForecastData.length > 0 && (
-            <div className="mt-6 space-y-6 border-t pt-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  📈 Pronóstico de Precios Unitarios
-                </h3>
-                <ResponsiveContainer width="100%" height={400}>
-                  <LineChart data={priceForecastData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="period" 
-                      label={{ value: 'Horizonte (Meses/Periodos Futuros)', position: 'insideBottom', offset: -5 }}
-                    />
-                    <YAxis 
-                      label={{ value: 'Precio Pronosticado (USD)', angle: -90, position: 'insideLeft' }}
-                    />
-                    <Tooltip 
-                      formatter={(value: number) => [`$${value.toFixed(2)}`, 'Pronóstico']}
-                      labelFormatter={(label) => `Periodo: ${label}`}
-                    />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="forecast" 
-                      stroke="#f97316" 
-                      strokeWidth={3}
-                      name="Pronóstico (USD)"
-                      dot={{ r: 6, fill: '#f97316' }}
-                      activeDot={{ r: 8 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-                <p className="text-xs text-muted-foreground mt-2 italic text-center">
-                  Pronóstico generado con modelo NARX – Sección Premium
-                </p>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Valores Pronosticados</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="border-b bg-muted/50">
-                        <th className="text-left p-3 font-semibold">Mes</th>
-                        <th className="text-right p-3 font-semibold">Precio Pronosticado (USD)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {priceForecastData.map((row, index) => (
-                        <tr key={index} className="border-b hover:bg-muted/50">
-                          <td className="p-3 font-medium">{row.period}</td>
-                          <td className="p-3 text-right font-mono text-primary font-bold">${row.forecast.toFixed(2)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2 italic text-center">
-                  Pronóstico generado con modelo NARX – Sección Premium
-                </p>
-              </div>
-            </div>
-          )}
 
           {(() => {
             console.log('🔍 VERIFICACIÓN DE RENDERIZADO:');
@@ -2129,7 +2066,7 @@ const Explorer = () => {
           {forecastData.length > 0 && (
             <div className="mt-6 space-y-6 border-t pt-6">
               <div>
-                <h3 className="text-lg font-semibold mb-4">Gráfico de Pronóstico NARX</h3>
+                <h3 className="text-lg font-semibold mb-4">Pronóstico de Precios Unitarios (Modelo NARX)</h3>
                 {(() => {
                   console.log('🎨 INICIO RENDERIZADO GRÁFICA');
                   console.log('🎨 narxHistoricalData disponible:', narxHistoricalData.length, 'registros');
