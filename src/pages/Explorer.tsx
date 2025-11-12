@@ -2136,16 +2136,16 @@ const Explorer = () => {
                   console.log('🎨 forecastData disponible:', forecastData.length, 'registros');
                   
                   // Combine historical and forecast data properly for Recharts
-                  // Each object must have ALL properties (historical AND forecast)
+                  // Each object must have ALL properties - use null instead of undefined
                   const chartData = [
                     ...narxHistoricalData.map(item => ({ 
                       period: item.period, 
                       historical: item.historical,
-                      forecast: undefined  // Explicitly set undefined for historical data
+                      forecast: null  // Use null so Recharts recognizes it
                     })),
                     ...forecastData.map(item => ({ 
                       period: item.period, 
-                      historical: undefined,  // Explicitly set undefined for forecast data
+                      historical: null,  // Use null so Recharts recognizes it
                       forecast: item.forecast
                     }))
                   ];
