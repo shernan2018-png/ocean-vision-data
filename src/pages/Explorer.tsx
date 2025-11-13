@@ -2107,14 +2107,27 @@ const Explorer = () => {
                     ...narxHistoricalData.map(item => ({ 
                       period: item.period, 
                       historical: item.historical,
-                      forecast: null  // Use null so Recharts recognizes it
+                      forecast: null,  // Use null so Recharts recognizes it
+                      connector: null
                     })),
                     ...forecastData.map(item => ({ 
                       period: item.period, 
                       historical: null,  // Use null so Recharts recognizes it
-                      forecast: item.forecast
+                      forecast: item.forecast,
+                      connector: null
                     }))
                   ];
+                  
+                  // Create connector line between last historical and first forecast
+                  if (narxHistoricalData.length > 0 && forecastData.length > 0) {
+                    const lastHistorical = narxHistoricalData[narxHistoricalData.length - 1];
+                    const firstForecast = forecastData[0];
+                    
+                    // Insert connector point at the junction
+                    const historicalIndex = narxHistoricalData.length - 1;
+                    chartData[historicalIndex].connector = lastHistorical.historical;
+                    chartData[historicalIndex + 1].connector = firstForecast.forecast;
+                  }
                   
                   console.log('🎨 Total puntos combinados:', chartData.length);
                   console.log('🎨 Primeros 3 puntos:', JSON.stringify(chartData.slice(0, 3), null, 2));
@@ -2150,6 +2163,17 @@ const Explorer = () => {
                           name="historical"
                           dot={{ r: 5, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
                           activeDot={{ r: 8 }}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="connector" 
+                          stroke="#f97316" 
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          name="connector"
+                          dot={false}
+                          legendType="none"
+                          connectNulls={false}
                         />
                         <Line 
                           type="monotone" 
