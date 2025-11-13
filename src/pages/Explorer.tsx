@@ -1369,20 +1369,22 @@ const Explorer = () => {
               </Select>
             </div>
 
-            <div>
+            <div className="lg:col-span-2">
               <Label htmlFor="hsCode">{t('explorer.hsCode')}</Label>
               <Select 
                 value={filters.cmdCode} 
                 onValueChange={(value) => setFilters({ ...filters, cmdCode: value })}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select HS Code">
-                    {filters.cmdCode && seafoodHSCodes.find(code => code.id === filters.cmdCode)?.text}
+                <SelectTrigger className="h-auto min-h-[40px]">
+                  <SelectValue placeholder="Select HS Code" className="whitespace-normal text-left">
+                    <span className="whitespace-normal break-words">
+                      {filters.cmdCode && seafoodHSCodes.find(code => code.id === filters.cmdCode)?.text}
+                    </span>
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="bg-background max-h-[300px]">
+                <SelectContent className="bg-background z-50 max-h-[300px] max-w-[600px]">
                   {seafoodHSCodes.map((code) => (
-                    <SelectItem key={code.id} value={code.id}>
+                    <SelectItem key={code.id} value={code.id} className="whitespace-normal">
                       {code.text}
                     </SelectItem>
                   ))}
@@ -1719,20 +1721,22 @@ const Explorer = () => {
               </Select>
             </div>
 
-            <div>
+            <div className="lg:col-span-2">
               <Label htmlFor="forecast-hsCode">Código HS</Label>
               <Select 
                 value={forecastInputs.cmdCode} 
                 onValueChange={(value) => setForecastInputs({ ...forecastInputs, cmdCode: value })}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar código HS">
-                    {forecastInputs.cmdCode && seafoodHSCodes.find(code => code.id === forecastInputs.cmdCode)?.text}
+                <SelectTrigger className="h-auto min-h-[40px]">
+                  <SelectValue placeholder="Seleccionar código HS" className="whitespace-normal text-left">
+                    <span className="whitespace-normal break-words">
+                      {forecastInputs.cmdCode && seafoodHSCodes.find(code => code.id === forecastInputs.cmdCode)?.text}
+                    </span>
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent className="bg-background z-50 max-h-[300px]">
+                <SelectContent className="bg-background z-50 max-h-[300px] max-w-[600px]">
                   {seafoodHSCodes.map((code) => (
-                    <SelectItem key={code.id} value={code.id}>
+                    <SelectItem key={code.id} value={code.id} className="whitespace-normal">
                       {code.text}
                     </SelectItem>
                   ))}
