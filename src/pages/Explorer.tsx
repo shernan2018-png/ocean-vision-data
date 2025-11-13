@@ -1375,16 +1375,16 @@ const Explorer = () => {
                 value={filters.cmdCode} 
                 onValueChange={(value) => setFilters({ ...filters, cmdCode: value })}
               >
-                <SelectTrigger className="h-auto min-h-[40px]">
-                  <SelectValue placeholder="Select HS Code" className="whitespace-normal text-left">
-                    <span className="whitespace-normal break-words">
-                      {filters.cmdCode && seafoodHSCodes.find(code => code.id === filters.cmdCode)?.text}
+                <SelectTrigger className="h-auto min-h-[40px] py-2">
+                  <SelectValue placeholder="Select HS Code">
+                    <span className="whitespace-normal text-left break-words block pr-2">
+                      {filters.cmdCode ? seafoodHSCodes.find(code => code.id === filters.cmdCode)?.text : "Select HS Code"}
                     </span>
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50 max-h-[300px] max-w-[600px]">
                   {seafoodHSCodes.map((code) => (
-                    <SelectItem key={code.id} value={code.id} className="whitespace-normal">
+                    <SelectItem key={code.id} value={code.id} className="whitespace-normal h-auto py-2">
                       {code.text}
                     </SelectItem>
                   ))}
@@ -1727,16 +1727,16 @@ const Explorer = () => {
                 value={forecastInputs.cmdCode} 
                 onValueChange={(value) => setForecastInputs({ ...forecastInputs, cmdCode: value })}
               >
-                <SelectTrigger className="h-auto min-h-[40px]">
-                  <SelectValue placeholder="Seleccionar código HS" className="whitespace-normal text-left">
-                    <span className="whitespace-normal break-words">
-                      {forecastInputs.cmdCode && seafoodHSCodes.find(code => code.id === forecastInputs.cmdCode)?.text}
+                <SelectTrigger className="h-auto min-h-[40px] py-2">
+                  <SelectValue placeholder="Seleccionar código HS">
+                    <span className="whitespace-normal text-left break-words block pr-2">
+                      {forecastInputs.cmdCode ? seafoodHSCodes.find(code => code.id === forecastInputs.cmdCode)?.text : "Seleccionar código HS"}
                     </span>
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50 max-h-[300px] max-w-[600px]">
                   {seafoodHSCodes.map((code) => (
-                    <SelectItem key={code.id} value={code.id} className="whitespace-normal">
+                    <SelectItem key={code.id} value={code.id} className="whitespace-normal h-auto py-2">
                       {code.text}
                     </SelectItem>
                   ))}
