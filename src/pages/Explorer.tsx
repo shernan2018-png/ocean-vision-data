@@ -1376,7 +1376,9 @@ const Explorer = () => {
                 onValueChange={(value) => setFilters({ ...filters, cmdCode: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select HS Code" />
+                  <SelectValue placeholder="Select HS Code">
+                    {filters.cmdCode && seafoodHSCodes.find(code => code.id === filters.cmdCode)?.text}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-background max-h-[300px]">
                   {seafoodHSCodes.map((code) => (
@@ -1724,7 +1726,9 @@ const Explorer = () => {
                 onValueChange={(value) => setForecastInputs({ ...forecastInputs, cmdCode: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar código HS" />
+                  <SelectValue placeholder="Seleccionar código HS">
+                    {forecastInputs.cmdCode && seafoodHSCodes.find(code => code.id === forecastInputs.cmdCode)?.text}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50 max-h-[300px]">
                   {seafoodHSCodes.map((code) => (
