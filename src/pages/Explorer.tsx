@@ -960,23 +960,26 @@ const Explorer = () => {
         throw new Error('No se pudo invocar la Edge Function de pronósticos. Verifica que esté desplegada.');
       }
 
-      // Verify that the server returns an array with period and value
-      if (!Array.isArray(forecastResult) || forecastResult.length === 0) {
+      // Convert single object to array if needed
+      let forecastArray = Array.isArray(forecastResult) ? forecastResult : [forecastResult];
+
+      // Verify that we have results
+      if (!forecastArray || forecastArray.length === 0) {
         throw new Error('No se recibieron resultados válidos del modelo.');
       }
 
       // Verify that each object has period and value
-      const isValidFormat = forecastResult.every(
+      const isValidFormat = forecastArray.every(
         item => item && typeof item === 'object' && 'period' in item && 'value' in item
       );
 
       if (!isValidFormat) {
-        throw new Error('No se recibieron resultados válidos del modelo.');
+        throw new Error('El formato de los resultados no es válido. Se esperaba objetos con "period" y "value".');
       }
 
       // Use the data directly from the server response
-      const forecastArray: { period: string; forecast: number; lower: number; upper: number }[] = 
-        forecastResult.map((item: { period: string; value: number }) => {
+      const processedForecast: { period: string; forecast: number; lower: number; upper: number }[] = 
+        forecastArray.map((item: { period: string; value: number }) => {
           // Calculate confidence intervals (simple ±15%)
           // Convert negative values to positive using Math.abs
           const forecastValue = Math.abs(item.value);
@@ -1000,11 +1003,11 @@ const Explorer = () => {
       // 💾 Guardar datos históricos Y pronóstico para la gráfica NARX
       console.log('💾 Guardando datos históricos NARX:', historicalDataForChart.length, 'periodos');
       console.log('💾 Primeros 3 históricos:', historicalDataForChart.slice(0, 3));
-      console.log('💾 Guardando pronóstico NARX:', forecastArray.length, 'periodos');
-      console.log('💾 Primeros 3 pronóstico:', forecastArray.slice(0, 3));
+      console.log('💾 Guardando pronóstico NARX:', processedForecast.length, 'periodos');
+      console.log('💾 Primeros 3 pronóstico:', processedForecast.slice(0, 3));
       
       setNarxHistoricalData(historicalDataForChart);
-      setForecastData(forecastArray);
+      setForecastData(processedForecast);
       setPriceForecastData(forecastArray);
 
       const exoCount = Object.keys(inputs).length - 1; // Exclude X1
