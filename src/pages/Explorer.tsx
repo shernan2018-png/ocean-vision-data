@@ -891,6 +891,7 @@ const Explorer = () => {
       // Build the complete request body
       const requestBody = {
         inputs,
+        frequency: forecastInputs.freq === 'M' ? 'monthly' : 'annual',
         horizon: parseInt(forecastInputs.horizon),
         lastDate
       };
@@ -1763,7 +1764,11 @@ const Explorer = () => {
               <Label htmlFor="forecast-freq">Frecuencia</Label>
               <Select 
                 value={forecastInputs.freq} 
-                onValueChange={(value) => setForecastInputs({ ...forecastInputs, freq: value })}
+                onValueChange={(value) => {
+                  // Ajustar horizonte según frecuencia
+                  const newHorizon = value === 'M' ? '3' : '1';
+                  setForecastInputs({ ...forecastInputs, freq: value, horizon: newHorizon });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -1959,8 +1964,17 @@ const Explorer = () => {
                   <SelectValue placeholder="Seleccionar horizonte" />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
-                  <SelectItem value="3">3 meses</SelectItem>
-                  <SelectItem value="6">6 meses</SelectItem>
+                  {forecastInputs.freq === 'M' ? (
+                    <>
+                      <SelectItem value="3">3 meses</SelectItem>
+                      <SelectItem value="6">6 meses</SelectItem>
+                    </>
+                  ) : (
+                    <>
+                      <SelectItem value="1">1 año</SelectItem>
+                      <SelectItem value="3">3 años</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
